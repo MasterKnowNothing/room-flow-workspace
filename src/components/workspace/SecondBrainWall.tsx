@@ -23,6 +23,10 @@ const noteColors = ['#fef3c7', '#dbeafe', '#d1fae5', '#fce7f3', '#e0e7ff', '#fed
 export const SecondBrainWall = ({ project, onUpdateProject }: SecondBrainWallProps) => {
   const [newNote, setNewNote] = useState('');
   const [newGoal, setNewGoal] = useState('');
+  const [title, setTitle] = useState(project?.name || 'My Goals');
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [size, setSize] = useState({ width: 320, height: 'auto' });
   const [showNoteInput, setShowNoteInput] = useState(false);
   const [showGoalInput, setShowGoalInput] = useState(false);
 

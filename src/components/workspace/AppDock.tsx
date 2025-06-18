@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
+import { Plus, X, Edit3 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 
@@ -14,21 +14,23 @@ interface AppDockProps {
   onOpenApp: (app: App) => void;
 }
 
-const popularApps: App[] = [
+const defaultApps: App[] = [
+  { name: 'Systematron', url: 'https://systematron.com', icon: '⚙️' },
+  { name: 'Word', url: 'https://office.live.com/start/Word.aspx', icon: '📄' },
   { name: 'Notion', url: 'https://notion.so', icon: '📝' },
-  { name: 'ChatGPT', url: 'https://chat.openai.com', icon: '🤖' },
-  { name: 'Google Docs', url: 'https://docs.google.com', icon: '📄' },
+  { name: 'Calculator', url: 'https://calculator.net', icon: '🧮' },
+  { name: 'DuckDuckGo', url: 'https://duckduckgo.com', icon: '🔍' },
   { name: 'Figma', url: 'https://figma.com', icon: '🎨' },
-  { name: 'Linear', url: 'https://linear.app', icon: '📋' },
-  { name: 'GitHub', url: 'https://github.com', icon: '💻' },
-  { name: 'Calendar', url: 'https://calendar.google.com', icon: '📅' },
-  { name: 'Gmail', url: 'https://gmail.com', icon: '📧' },
+  { name: 'YouTube', url: 'https://youtube.com', icon: '📺' },
+  { name: 'Spotify', url: 'https://open.spotify.com', icon: '🎵' },
 ];
 
 export const AppDock = ({ onOpenApp }: AppDockProps) => {
   const [customAppName, setCustomAppName] = useState('');
   const [customAppUrl, setCustomAppUrl] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [apps, setApps] = useState<App[]>(defaultApps);
 
   const handleAddCustomApp = () => {
     if (customAppName && customAppUrl) {
@@ -37,11 +39,14 @@ export const AppDock = ({ onOpenApp }: AppDockProps) => {
         url = 'https://' + url;
       }
       
-      onOpenApp({
+      const newApp = {
         name: customAppName,
         url: url,
         icon: '🌐'
-      });
+      };
+      
+      setApps(prev => [...prev, newApp]);
+      onOpenApp(newApp);
       
       setCustomAppName('');
       setCustomAppUrl('');
@@ -49,21 +54,46 @@ export const AppDock = ({ onOpenApp }: AppDockProps) => {
     }
   };
 
+  const removeApp = (index: number) => {
+    setApps(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const moveApp = (fromIndex: number, toIndex: number) => {
+    setApps(prev => {
+      const newApps = [...prev];
+      const [movedApp] = newApps.splice(fromIndex, 1);
+      newApps.splice(toIndex, 0, movedApp);
+      return newApps;
+    });
+  };
+
   return (
-    <div className="flex items-center gap-2 bg-glass backdrop-blur-md border border-glass-border rounded-full px-4 py-2 shadow-lg">
-      {/* Popular Apps */}
-      {popularApps.map((app) => (
-        <Button
-          key={app.name}
-          variant="ghost"
-          size="icon"
-          className="h-12 w-12 rounded-full hover:bg-glass/80 hover:scale-110 transition-all duration-200 text-lg"
-          onClick={() => onOpenApp(app)}
-          title={app.name}
-        >
-          {app.icon}
-        </Button>
-      ))}
+    <div className="relative">
+      <div className="flex items-center gap-2 bg-glass backdrop-blur-md border border-glass-border rounded-full px-4 py-2 shadow-lg">
+        {/* Apps */}
+        {apps.map((app, index) => (
+          <div key={app.name} className="relative group">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-12 w-12 rounded-full hover:bg-glass/80 hover:scale-110 transition-all duration-200 text-lg"
+              onClick={() => !isEditMode && onOpenApp(app)}
+              title={app.name}
+            >
+              {app.icon}
+            </Button>
+            {isEditMode && (
+              <Button
+                variant="destructive"
+                size="icon"
+                className="absolute -top-2 -right-2 h-6 w-6 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                onClick={() => removeApp(index)}
+              >
+                <X className="h-3 w-3" />
+              </Button>
+            )}
+          </div>
+        ))}
 
       {/* Separator */}
       <div className="w-px h-8 bg-glass-border mx-2" />
@@ -124,6 +154,18 @@ export const AppDock = ({ onOpenApp }: AppDockProps) => {
           </div>
         </DialogContent>
       </Dialog>
+      </div>
+      
+      {/* Edit Button */}
+      <Button
+        variant="ghost"
+        size="sm"
+        className="absolute -top-8 right-0 text-xs underline hover:no-underline"
+        onClick={() => setIsEditMode(!isEditMode)}
+      >
+        <Edit3 className="h-3 w-3 mr-1" />
+        edit
+      </Button>
     </div>
   );
 };

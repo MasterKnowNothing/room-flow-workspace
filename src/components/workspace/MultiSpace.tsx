@@ -6,6 +6,12 @@ import { ProjectSwitcher } from './ProjectSwitcher';
 import { ProductivityTimer } from './ProductivityTimer';
 import { SecondBrainWall } from './SecondBrainWall';
 import { AICommandCenter } from './AICommandCenter';
+import { SocialButton } from './SocialButton';
+import { ShareWorkspaceButton } from './ShareWorkspaceButton';
+import { SubmitToolButton } from './SubmitToolButton';
+import { ExploreToolsButton } from './ExploreToolsButton';
+import { ThemeSwitcher } from './ThemeSwitcher';
+import { IntroductionTour } from './IntroductionTour';
 import { useToast } from '@/hooks/use-toast';
 
 export interface WorkspaceWindow {
@@ -154,13 +160,23 @@ export const MultiSpace = () => {
 
   return (
     <WorkspaceLayout>
-      {/* Project Switcher */}
-      <div className="absolute top-4 left-4 z-50">
+      <IntroductionTour />
+      
+      {/* Top Left Controls */}
+      <div className="absolute top-4 left-4 z-50 flex items-center gap-2">
         <ProjectSwitcher 
           projects={projects}
           currentProject={currentProject}
           onProjectSwitch={switchProject}
         />
+        <SocialButton />
+        <ShareWorkspaceButton />
+        <ExploreToolsButton />
+      </div>
+      
+      {/* Top Right Controls */}
+      <div className="absolute top-4 right-4 z-50">
+        <ThemeSwitcher />
       </div>
 
       {/* Central Desk Area */}
@@ -184,7 +200,7 @@ export const MultiSpace = () => {
       ))}
 
       {/* Second Brain Wall */}
-      <div className="absolute left-4 top-1/4 bottom-4 w-80 z-20">
+      <div className="absolute left-4 top-1/4 z-20">
         <SecondBrainWall 
           project={projects[currentProject]}
           onUpdateProject={(updates) => {
@@ -202,12 +218,15 @@ export const MultiSpace = () => {
       </div>
 
       {/* AI Command Center */}
-      <div className="absolute bottom-4 right-4 z-50">
+      <div className="absolute bottom-20 right-4 z-50">
         <AICommandCenter 
           onOpenApp={openWindow}
           currentProject={projects[currentProject]}
         />
       </div>
+      
+      {/* Submit Tool Button */}
+      <SubmitToolButton />
     </WorkspaceLayout>
   );
 };
