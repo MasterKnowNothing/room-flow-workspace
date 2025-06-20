@@ -3,7 +3,6 @@ import { WorkspaceLayout } from './WorkspaceLayout';
 import { DraggableWindow } from './DraggableWindow';
 import { AppDock } from './AppDock';
 import { ProjectSwitcher } from './ProjectSwitcher';
-import { ProductivityTimer } from './ProductivityTimer';
 import { SecondBrainWall } from './SecondBrainWall';
 import { AICommandCenter } from './AICommandCenter';
 import { SocialButton } from './SocialButton';
@@ -12,7 +11,12 @@ import { SubmitToolButton } from './SubmitToolButton';
 import { ExploreToolsButton } from './ExploreToolsButton';
 import { ThemeSwitcher } from './ThemeSwitcher';
 import { IntroductionTour } from './IntroductionTour';
+import { WorkspaceTitle } from './WorkspaceTitle';
+import { TeamModeButton } from './TeamModeButton';
+import { ProductivityTimerButton } from './ProductivityTimerButton';
+import { SaveOptionsButton } from './SaveOptionsButton';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 
 export interface WorkspaceWindow {
   id: string;
@@ -169,9 +173,15 @@ export const MultiSpace = () => {
           currentProject={currentProject}
           onProjectSwitch={switchProject}
         />
+        <SaveOptionsButton />
         <SocialButton />
         <ShareWorkspaceButton />
         <ExploreToolsButton />
+      </div>
+      
+      {/* Top Center Title */}
+      <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-50">
+        <WorkspaceTitle />
       </div>
       
       {/* Top Right Controls */}
@@ -179,13 +189,15 @@ export const MultiSpace = () => {
         <ThemeSwitcher />
       </div>
 
-      {/* Central Desk Area */}
-      <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10">
-        <ProductivityTimer 
-          isActive={isTimerActive}
-          onToggle={() => setIsTimerActive(!isTimerActive)}
-          onSessionComplete={addProductivityTime}
+      {/* Bottom Right Action Buttons */}
+      <div className="absolute bottom-4 right-4 z-50 flex flex-col gap-3">
+        <AICommandCenter 
+          onOpenApp={openWindow}
+          currentProject={projects[currentProject]}
         />
+        <TeamModeButton />
+        <ProductivityTimerButton />
+        <SubmitToolButton />
       </div>
 
       {/* Draggable Windows */}
@@ -199,7 +211,7 @@ export const MultiSpace = () => {
         />
       ))}
 
-      {/* Second Brain Wall */}
+      {/* My Notes Wall */}
       <div className="absolute left-4 top-1/4 z-20">
         <SecondBrainWall 
           project={projects[currentProject]}
@@ -217,16 +229,6 @@ export const MultiSpace = () => {
         <AppDock onOpenApp={openWindow} />
       </div>
 
-      {/* AI Command Center */}
-      <div className="absolute bottom-20 right-4 z-50">
-        <AICommandCenter 
-          onOpenApp={openWindow}
-          currentProject={projects[currentProject]}
-        />
-      </div>
-      
-      {/* Submit Tool Button */}
-      <SubmitToolButton />
     </WorkspaceLayout>
   );
 };

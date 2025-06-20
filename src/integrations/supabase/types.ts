@@ -9,7 +9,205 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      chat_members: {
+        Row: {
+          chat_id: string
+          id: string
+          joined_at: string
+          user_id: string
+        }
+        Insert: {
+          chat_id: string
+          id?: string
+          joined_at?: string
+          user_id: string
+        }
+        Update: {
+          chat_id?: string
+          id?: string
+          joined_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_members_chat_id_fkey"
+            columns: ["chat_id"]
+            isOneToOne: false
+            referencedRelation: "team_chats"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      friendships: {
+        Row: {
+          addressee_id: string
+          created_at: string
+          id: string
+          requester_id: string
+          status: string
+        }
+        Insert: {
+          addressee_id: string
+          created_at?: string
+          id?: string
+          requester_id: string
+          status: string
+        }
+        Update: {
+          addressee_id?: string
+          created_at?: string
+          id?: string
+          requester_id?: string
+          status?: string
+        }
+        Relationships: []
+      }
+      messages: {
+        Row: {
+          chat_id: string
+          content: string
+          created_at: string
+          file_url: string | null
+          id: string
+          message_type: string | null
+          sender_id: string
+          workspace_data: Json | null
+        }
+        Insert: {
+          chat_id: string
+          content: string
+          created_at?: string
+          file_url?: string | null
+          id?: string
+          message_type?: string | null
+          sender_id: string
+          workspace_data?: Json | null
+        }
+        Update: {
+          chat_id?: string
+          content?: string
+          created_at?: string
+          file_url?: string | null
+          id?: string
+          message_type?: string | null
+          sender_id?: string
+          workspace_data?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_chat_id_fkey"
+            columns: ["chat_id"]
+            isOneToOne: false
+            referencedRelation: "team_chats"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          display_name: string | null
+          email: string | null
+          id: string
+          is_online: boolean | null
+          show_online: boolean | null
+          updated_at: string
+          user_id: string
+          username: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          email?: string | null
+          id?: string
+          is_online?: boolean | null
+          show_online?: boolean | null
+          updated_at?: string
+          user_id: string
+          username?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          email?: string | null
+          id?: string
+          is_online?: boolean | null
+          show_online?: boolean | null
+          updated_at?: string
+          user_id?: string
+          username?: string | null
+        }
+        Relationships: []
+      }
+      team_chats: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: string
+          is_group_chat: boolean | null
+          name: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          id?: string
+          is_group_chat?: boolean | null
+          name?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          is_group_chat?: boolean | null
+          name?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      workspaces: {
+        Row: {
+          created_at: string
+          goals: Json | null
+          id: string
+          is_default: boolean | null
+          name: string
+          notes: Json | null
+          total_productivity_time: number | null
+          updated_at: string
+          user_id: string
+          windows: Json | null
+        }
+        Insert: {
+          created_at?: string
+          goals?: Json | null
+          id?: string
+          is_default?: boolean | null
+          name?: string
+          notes?: Json | null
+          total_productivity_time?: number | null
+          updated_at?: string
+          user_id: string
+          windows?: Json | null
+        }
+        Update: {
+          created_at?: string
+          goals?: Json | null
+          id?: string
+          is_default?: boolean | null
+          name?: string
+          notes?: Json | null
+          total_productivity_time?: number | null
+          updated_at?: string
+          user_id?: string
+          windows?: Json | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
