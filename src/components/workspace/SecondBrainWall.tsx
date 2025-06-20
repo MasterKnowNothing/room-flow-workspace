@@ -84,7 +84,7 @@ export const SecondBrainWall = ({ project, onUpdateProject }: SecondBrainWallPro
       <div className="h-full flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between mb-4 pb-2 border-b border-glass-border">
-          <h3 className="font-semibold text-workspace-foreground">Second Brain</h3>
+          <h3 className="font-semibold text-workspace-foreground">My Notes</h3>
           <div className="flex gap-2">
             <Button
               variant="ghost"
@@ -170,7 +170,7 @@ export const SecondBrainWall = ({ project, onUpdateProject }: SecondBrainWallPro
             <div className="flex flex-col items-center justify-center h-full text-center py-8">
               <div className="text-workspace-foreground/40 mb-4">
                 <StickyNote className="h-12 w-12 mx-auto mb-2" />
-                <p className="text-sm">Your Second Brain is empty</p>
+                <p className="text-sm">Your notes are empty</p>
                 <p className="text-xs text-workspace-foreground/30 mt-1">
                   Add notes and goals to get started
                 </p>

@@ -21,7 +21,7 @@ const defaultApps: App[] = [
   { name: 'Calculator', url: 'https://calculator.net', icon: '🧮' },
   { name: 'DuckDuckGo', url: 'https://duckduckgo.com', icon: '🔍' },
   { name: 'Figma', url: 'https://figma.com', icon: '🎨' },
-  { name: 'YouTube', url: 'https://youtube.com', icon: '📺' },
+  { name: 'Open File', url: 'file-opener', icon: '📁' },
   { name: 'Spotify', url: 'https://open.spotify.com', icon: '🎵' },
 ];
 
@@ -29,8 +29,8 @@ export const AppDock = ({ onOpenApp }: AppDockProps) => {
   const [customAppName, setCustomAppName] = useState('');
   const [customAppUrl, setCustomAppUrl] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isEditMode, setIsEditMode] = useState(false);
   const [apps, setApps] = useState<App[]>(defaultApps);
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
 
   const handleAddCustomApp = () => {
     if (customAppName && customAppUrl) {
@@ -54,10 +54,6 @@ export const AppDock = ({ onOpenApp }: AppDockProps) => {
     }
   };
 
-  const removeApp = (index: number) => {
-    setApps(prev => prev.filter((_, i) => i !== index));
-  };
-
   const moveApp = (fromIndex: number, toIndex: number) => {
     setApps(prev => {
       const newApps = [...prev];
@@ -67,31 +63,44 @@ export const AppDock = ({ onOpenApp }: AppDockProps) => {
     });
   };
 
+  const handleDragStart = (index: number) => {
+    setDraggedIndex(index);
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    if (draggedIndex !== null && draggedIndex !== index) {
+      moveApp(draggedIndex, index);
+      setDraggedIndex(index);
+    }
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIndex(null);
+  };
+
   return (
     <div className="relative">
       <div className="flex items-center gap-2 bg-glass backdrop-blur-md border border-glass-border rounded-full px-4 py-2 shadow-lg">
         {/* Apps */}
         {apps.map((app, index) => (
-          <div key={app.name} className="relative group">
+          <div 
+            key={app.name} 
+            className="relative group"
+            draggable
+            onDragStart={() => handleDragStart(index)}
+            onDragOver={(e) => handleDragOver(e, index)}
+            onDragEnd={handleDragEnd}
+          >
             <Button
               variant="ghost"
               size="icon"
-              className="h-12 w-12 rounded-full hover:bg-glass/80 hover:scale-110 transition-all duration-200 text-lg"
-              onClick={() => !isEditMode && onOpenApp(app)}
+              className="h-12 w-12 rounded-full hover:bg-glass/80 hover:scale-110 transition-all duration-200 text-lg cursor-pointer"
+              onClick={() => onOpenApp(app)}
               title={app.name}
             >
               {app.icon}
             </Button>
-            {isEditMode && (
-              <Button
-                variant="destructive"
-                size="icon"
-                className="absolute -top-2 -right-2 h-6 w-6 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                onClick={() => removeApp(index)}
-              >
-                <X className="h-3 w-3" />
-              </Button>
-            )}
           </div>
         ))}
 
@@ -155,17 +164,6 @@ export const AppDock = ({ onOpenApp }: AppDockProps) => {
         </DialogContent>
       </Dialog>
       </div>
-      
-      {/* Edit Button */}
-      <Button
-        variant="ghost"
-        size="sm"
-        className="absolute -top-8 right-0 text-xs underline hover:no-underline"
-        onClick={() => setIsEditMode(!isEditMode)}
-      >
-        <Edit3 className="h-3 w-3 mr-1" />
-        edit
-      </Button>
     </div>
   );
 };

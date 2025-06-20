@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { WorkspaceLayout } from './WorkspaceLayout';
-import { DraggableWindow } from './DraggableWindow';
+import { WindowManager } from './WindowManager';
 import { AppDock } from './AppDock';
 import { ProjectSwitcher } from './ProjectSwitcher';
 import { SecondBrainWall } from './SecondBrainWall';
@@ -62,7 +62,7 @@ export const MultiSpace = () => {
       // Initialize with default project
       const defaultProject: Project = {
         id: 'default',
-        name: 'My Workspace',
+        name: 'Workspace 1',
         windows: [],
         notes: [],
         goals: [],
@@ -200,16 +200,13 @@ export const MultiSpace = () => {
         <SubmitToolButton />
       </div>
 
-      {/* Draggable Windows */}
-      {windows.map(window => (
-        <DraggableWindow
-          key={window.id}
-          window={window}
-          onClose={() => closeWindow(window.id)}
-          onUpdate={(updates) => updateWindow(window.id, updates)}
-          onFocus={() => bringToFront(window.id)}
-        />
-      ))}
+      {/* Window Manager */}
+      <WindowManager
+        windows={windows}
+        onClose={closeWindow}
+        onUpdate={updateWindow}
+        onFocus={bringToFront}
+      />
 
       {/* My Notes Wall */}
       <div className="absolute left-4 top-1/4 z-20">

@@ -102,12 +102,16 @@ export const AICommandCenter = ({ onOpenApp, currentProject }: AICommandCenterPr
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button
-          size="icon"
-          className="h-14 w-14 rounded-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
-        >
-          <Sparkles className="h-6 w-6" />
-        </Button>
+        <div className="flex flex-col items-center">
+          <Button
+            size="icon"
+            className="h-12 w-12 rounded-full shadow-lg bg-primary hover:bg-primary/90"
+            title="AI Assistant"
+          >
+            <Sparkles className="h-5 w-5" />
+          </Button>
+          <span className="text-xs text-muted-foreground mt-1">Ask AI</span>
+        </div>
       </DialogTrigger>
       
       <DialogContent className="sm:max-w-lg">

@@ -34,22 +34,22 @@ export const IntroductionTour = () => {
       arrow: ArrowUp
     },
     {
-      title: "My Goals",
-      description: "Pin your notes, goals, and files here",
+      title: "My Notes",
+      description: "Pin your notes and goals here",
       position: "left",
       arrow: ArrowRight
-    },
-    {
-      title: "Productivity Timer",
-      description: "Start your focus sessions here",
-      position: "center",
-      arrow: null
     },
     {
       title: "AI Assistant",
       description: "Get help and generate tasks",
       position: "bottom-right",
       arrow: ArrowLeft
+    },
+    {
+      title: "Save Your Work",
+      description: "Everything saves automatically. Sign in to sync across devices",
+      position: "center", 
+      arrow: null
     }
   ];
 
