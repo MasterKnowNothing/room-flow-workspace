@@ -63,6 +63,11 @@ export const MultiSpace = () => {
     return () => clearInterval(interval);
   }, [startTime]);
 
+  // Reset start time when component mounts
+  useEffect(() => {
+    setStartTime(Date.now());
+  }, []);
+
   // Load/save data from Supabase when user is authenticated
   useEffect(() => {
     if (user) {
@@ -79,7 +84,7 @@ export const MultiSpace = () => {
     } else {
       saveLocalData();
     }
-  }, [projects, user]);
+  }, [projects, user, timeSpent]);
 
   const loadUserData = async () => {
     if (!user) return;
@@ -96,9 +101,9 @@ export const MultiSpace = () => {
           userProjects[workspace.id] = {
             id: workspace.id,
             name: workspace.name,
-            windows: Array.isArray(workspace.windows) ? workspace.windows as WorkspaceWindow[] : [],
-            notes: Array.isArray(workspace.notes) ? workspace.notes as string[] : [],
-            goals: Array.isArray(workspace.goals) ? workspace.goals as string[] : [],
+            windows: Array.isArray(workspace.windows) ? (workspace.windows as unknown as WorkspaceWindow[]) : [],
+            notes: Array.isArray(workspace.notes) ? (workspace.notes as unknown as string[]) : [],
+            goals: Array.isArray(workspace.goals) ? (workspace.goals as unknown as string[]) : [],
             totalProductivityTime: workspace.total_productivity_time || 0
           };
         });
@@ -106,8 +111,9 @@ export const MultiSpace = () => {
         
         const defaultWorkspace = workspaces.find(w => w.is_default) || workspaces[0];
         setCurrentProject(defaultWorkspace.id);
-        setWindows(Array.isArray(defaultWorkspace.windows) ? defaultWorkspace.windows as WorkspaceWindow[] : []);
+        setWindows(Array.isArray(defaultWorkspace.windows) ? (defaultWorkspace.windows as unknown as WorkspaceWindow[]) : []);
         setTimeSpent(defaultWorkspace.total_productivity_time || 0);
+        setStartTime(Date.now() - (defaultWorkspace.total_productivity_time || 0) * 1000);
       }
     } catch (error) {
       console.error('Error loading user data:', error);
@@ -118,16 +124,23 @@ export const MultiSpace = () => {
   const saveUserData = async () => {
     if (!user || !projects[currentProject]) return;
 
+    // Update current project with latest time
+    const updatedProject = {
+      ...projects[currentProject],
+      totalProductivityTime: timeSpent,
+      windows: windows
+    };
+
     try {
       await supabase
         .from('workspaces')
         .upsert({
           id: currentProject,
           user_id: user.id,
-          name: projects[currentProject].name,
+          name: updatedProject.name,
           windows: JSON.parse(JSON.stringify(windows)), // Ensure JSON serializable
-          notes: projects[currentProject].notes,
-          goals: projects[currentProject].goals,
+          notes: updatedProject.notes,
+          goals: updatedProject.goals,
           total_productivity_time: timeSpent,
           is_default: currentProject === 'default'
         });
@@ -146,6 +159,8 @@ export const MultiSpace = () => {
       
       if (parsedProjects.default) {
         setWindows(parsedProjects.default.windows || []);
+        setTimeSpent(parsedProjects.default.totalProductivityTime || 0);
+        setStartTime(Date.now() - (parsedProjects.default.totalProductivityTime || 0) * 1000);
       }
     } else {
       const defaultProject: Project = {
@@ -165,7 +180,17 @@ export const MultiSpace = () => {
   };
 
   const saveLocalData = () => {
-    localStorage.setItem('multispace-projects', JSON.stringify(projects));
+    // Update current project with latest time and windows
+    const updatedProjects = {
+      ...projects,
+      [currentProject]: {
+        ...projects[currentProject],
+        totalProductivityTime: timeSpent,
+        windows: windows
+      }
+    };
+    
+    localStorage.setItem('multispace-projects', JSON.stringify(updatedProjects));
     localStorage.setItem(`multispace-time-${currentProject}`, timeSpent.toString());
   };
 
@@ -217,7 +242,8 @@ export const MultiSpace = () => {
       ...prev,
       [currentProject]: {
         ...prev[currentProject],
-        totalProductivityTime: timeSpent
+        totalProductivityTime: timeSpent,
+        windows: windows
       }
     }));
 
