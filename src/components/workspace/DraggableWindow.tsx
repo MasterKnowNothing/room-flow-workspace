@@ -35,8 +35,8 @@ export const DraggableWindow = ({ window, onClose, onUpdate, onFocus }: Draggabl
         const newY = e.clientY - dragOffset.y;
         
         // Keep within viewport bounds
-        const maxX = window.innerWidth - window.width;
-        const maxY = window.innerHeight - window.height;
+        const maxX = globalThis.window.innerWidth - window.width;
+        const maxY = globalThis.window.innerHeight - window.height;
         
         onUpdate({
           x: Math.max(0, Math.min(maxX, newX)),
@@ -125,8 +125,8 @@ export const DraggableWindow = ({ window, onClose, onUpdate, onFocus }: Draggabl
         savedPosition: { x: window.x, y: window.y, width: window.width, height: window.height },
         x: 0,
         y: 0,
-        width: window.innerWidth,
-        height: window.innerHeight - 200
+        width: globalThis.window.innerWidth,
+        height: globalThis.window.innerHeight - 200
       });
     }
   };

@@ -96,18 +96,18 @@ export const MultiSpace = () => {
           userProjects[workspace.id] = {
             id: workspace.id,
             name: workspace.name,
-            windows: workspace.windows || [],
-            notes: workspace.notes || [],
-            goals: workspace.goals || [],
-            totalProductivityTime: workspace.total_time || timeSpent
+            windows: Array.isArray(workspace.windows) ? workspace.windows as WorkspaceWindow[] : [],
+            notes: Array.isArray(workspace.notes) ? workspace.notes as string[] : [],
+            goals: Array.isArray(workspace.goals) ? workspace.goals as string[] : [],
+            totalProductivityTime: workspace.total_productivity_time || 0
           };
         });
         setProjects(userProjects);
         
         const defaultWorkspace = workspaces.find(w => w.is_default) || workspaces[0];
         setCurrentProject(defaultWorkspace.id);
-        setWindows(defaultWorkspace.windows || []);
-        setTimeSpent(defaultWorkspace.total_time || 0);
+        setWindows(Array.isArray(defaultWorkspace.windows) ? defaultWorkspace.windows as WorkspaceWindow[] : []);
+        setTimeSpent(defaultWorkspace.total_productivity_time || 0);
       }
     } catch (error) {
       console.error('Error loading user data:', error);
@@ -125,10 +125,10 @@ export const MultiSpace = () => {
           id: currentProject,
           user_id: user.id,
           name: projects[currentProject].name,
-          windows: windows,
+          windows: JSON.parse(JSON.stringify(windows)), // Ensure JSON serializable
           notes: projects[currentProject].notes,
           goals: projects[currentProject].goals,
-          total_time: timeSpent,
+          total_productivity_time: timeSpent,
           is_default: currentProject === 'default'
         });
     } catch (error) {
