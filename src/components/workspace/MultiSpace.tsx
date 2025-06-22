@@ -17,6 +17,7 @@ import { ProductivityTimerButton } from './ProductivityTimerButton';
 import { SaveOptionsButton } from './SaveOptionsButton';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface WorkspaceWindow {
   id: string;
@@ -28,6 +29,8 @@ export interface WorkspaceWindow {
   height: number;
   zIndex: number;
   isMinimized?: boolean;
+  isFullscreen?: boolean;
+  savedPosition?: { x: number; y: number; width: number; height: number };
 }
 
 export interface Project {
@@ -44,22 +47,107 @@ export const MultiSpace = () => {
   const [projects, setProjects] = useState<{ [key: string]: Project }>({});
   const [windows, setWindows] = useState<WorkspaceWindow[]>([]);
   const [highestZIndex, setHighestZIndex] = useState(1000);
-  const [isTimerActive, setIsTimerActive] = useState(false);
+  const [timeSpent, setTimeSpent] = useState<number>(0);
+  const [startTime, setStartTime] = useState<number>(Date.now());
   const { toast } = useToast();
+  const { user } = useAuth();
 
-  // Load data from localStorage on mount
+  // Time tracking for current workspace
   useEffect(() => {
+    const interval = setInterval(() => {
+      const currentTime = Date.now();
+      const elapsed = Math.floor((currentTime - startTime) / 1000);
+      setTimeSpent(elapsed);
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [startTime]);
+
+  // Load/save data from Supabase when user is authenticated
+  useEffect(() => {
+    if (user) {
+      loadUserData();
+    } else {
+      loadLocalData();
+    }
+  }, [user]);
+
+  // Save to Supabase when authenticated, localStorage when not
+  useEffect(() => {
+    if (user) {
+      saveUserData();
+    } else {
+      saveLocalData();
+    }
+  }, [projects, user]);
+
+  const loadUserData = async () => {
+    if (!user) return;
+    
+    try {
+      const { data: workspaces } = await supabase
+        .from('workspaces')
+        .select('*')
+        .eq('user_id', user.id);
+
+      if (workspaces && workspaces.length > 0) {
+        const userProjects: { [key: string]: Project } = {};
+        workspaces.forEach(workspace => {
+          userProjects[workspace.id] = {
+            id: workspace.id,
+            name: workspace.name,
+            windows: workspace.windows || [],
+            notes: workspace.notes || [],
+            goals: workspace.goals || [],
+            totalProductivityTime: workspace.total_time || timeSpent
+          };
+        });
+        setProjects(userProjects);
+        
+        const defaultWorkspace = workspaces.find(w => w.is_default) || workspaces[0];
+        setCurrentProject(defaultWorkspace.id);
+        setWindows(defaultWorkspace.windows || []);
+        setTimeSpent(defaultWorkspace.total_time || 0);
+      }
+    } catch (error) {
+      console.error('Error loading user data:', error);
+      loadLocalData();
+    }
+  };
+
+  const saveUserData = async () => {
+    if (!user || !projects[currentProject]) return;
+
+    try {
+      await supabase
+        .from('workspaces')
+        .upsert({
+          id: currentProject,
+          user_id: user.id,
+          name: projects[currentProject].name,
+          windows: windows,
+          notes: projects[currentProject].notes,
+          goals: projects[currentProject].goals,
+          total_time: timeSpent,
+          is_default: currentProject === 'default'
+        });
+    } catch (error) {
+      console.error('Error saving user data:', error);
+    }
+  };
+
+  const loadLocalData = () => {
     const savedProjects = localStorage.getItem('multispace-projects');
+    const savedTime = localStorage.getItem(`multispace-time-${currentProject}`);
+    
     if (savedProjects) {
       const parsedProjects = JSON.parse(savedProjects);
       setProjects(parsedProjects);
       
-      // Load default project if it exists
       if (parsedProjects.default) {
         setWindows(parsedProjects.default.windows || []);
       }
     } else {
-      // Initialize with default project
       const defaultProject: Project = {
         id: 'default',
         name: 'Workspace 1',
@@ -70,23 +158,16 @@ export const MultiSpace = () => {
       };
       setProjects({ default: defaultProject });
     }
-  }, []);
 
-  // Save to localStorage whenever projects change
-  useEffect(() => {
+    if (savedTime) {
+      setTimeSpent(parseInt(savedTime));
+    }
+  };
+
+  const saveLocalData = () => {
     localStorage.setItem('multispace-projects', JSON.stringify(projects));
-  }, [projects]);
-
-  // Update current project's windows when windows change
-  useEffect(() => {
-    setProjects(prev => ({
-      ...prev,
-      [currentProject]: {
-        ...prev[currentProject],
-        windows: windows
-      }
-    }));
-  }, [windows, currentProject]);
+    localStorage.setItem(`multispace-time-${currentProject}`, timeSpent.toString());
+  };
 
   const openWindow = (app: { name: string; url: string; icon: string }) => {
     const newWindow: WorkspaceWindow = {
@@ -131,10 +212,19 @@ export const MultiSpace = () => {
   };
 
   const switchProject = (projectId: string) => {
+    // Save current time to current project
+    setProjects(prev => ({
+      ...prev,
+      [currentProject]: {
+        ...prev[currentProject],
+        totalProductivityTime: timeSpent
+      }
+    }));
+
     if (!projects[projectId]) {
       const newProject: Project = {
         id: projectId,
-        name: `Project ${Object.keys(projects).length + 1}`,
+        name: `Workspace ${Object.keys(projects).length + 1}`,
         windows: [],
         notes: [],
         goals: [],
@@ -145,6 +235,8 @@ export const MultiSpace = () => {
 
     setCurrentProject(projectId);
     setWindows(projects[projectId]?.windows || []);
+    setTimeSpent(projects[projectId]?.totalProductivityTime || 0);
+    setStartTime(Date.now() - (projects[projectId]?.totalProductivityTime || 0) * 1000);
     
     toast({
       title: "Project switched",
@@ -152,14 +244,11 @@ export const MultiSpace = () => {
     });
   };
 
-  const addProductivityTime = (minutes: number) => {
-    setProjects(prev => ({
-      ...prev,
-      [currentProject]: {
-        ...prev[currentProject],
-        totalProductivityTime: (prev[currentProject]?.totalProductivityTime || 0) + minutes
-      }
-    }));
+  const formatTime = (seconds: number) => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    return `${hours}h ${minutes}m ${secs}s`;
   };
 
   return (
@@ -167,16 +256,26 @@ export const MultiSpace = () => {
       <IntroductionTour />
       
       {/* Top Left Controls */}
-      <div className="absolute top-4 left-4 z-50 flex items-center gap-2">
-        <ProjectSwitcher 
-          projects={projects}
-          currentProject={currentProject}
-          onProjectSwitch={switchProject}
+      <div className="absolute top-4 left-4 z-50 flex flex-col gap-2">
+        <div className="flex items-center gap-2">
+          <ProjectSwitcher 
+            projects={projects}
+            currentProject={currentProject}
+            onProjectSwitch={switchProject}
+          />
+          <SaveOptionsButton />
+        </div>
+        
+        {/* My Notes under Workspace */}
+        <SecondBrainWall 
+          project={projects[currentProject]}
+          onUpdateProject={(updates) => {
+            setProjects(prev => ({
+              ...prev,
+              [currentProject]: { ...prev[currentProject], ...updates }
+            }));
+          }}
         />
-        <SaveOptionsButton />
-        <SocialButton />
-        <ShareWorkspaceButton />
-        <ExploreToolsButton />
       </div>
       
       {/* Top Center Title */}
@@ -185,8 +284,16 @@ export const MultiSpace = () => {
       </div>
       
       {/* Top Right Controls */}
-      <div className="absolute top-4 right-4 z-50">
+      <div className="absolute top-4 right-4 z-50 flex items-center gap-2">
+        <SocialButton />
+        <ShareWorkspaceButton />
+        <ExploreToolsButton />
         <ThemeSwitcher />
+      </div>
+
+      {/* Time Display */}
+      <div className="absolute top-4 left-4 z-40 mt-12 bg-white dark:bg-gray-900 px-3 py-1 rounded-md shadow-sm border">
+        <span className="text-sm font-medium">{formatTime(timeSpent)}</span>
       </div>
 
       {/* Bottom Right Action Buttons */}
@@ -200,24 +307,13 @@ export const MultiSpace = () => {
         <SubmitToolButton />
       </div>
 
-      {/* Window Manager */}
-      <WindowManager
-        windows={windows}
-        onClose={closeWindow}
-        onUpdate={updateWindow}
-        onFocus={bringToFront}
-      />
-
-      {/* My Notes Wall */}
-      <div className="absolute left-4 top-1/4 z-20">
-        <SecondBrainWall 
-          project={projects[currentProject]}
-          onUpdateProject={(updates) => {
-            setProjects(prev => ({
-              ...prev,
-              [currentProject]: { ...prev[currentProject], ...updates }
-            }));
-          }}
+      {/* Expanded Window Manager with Canvas */}
+      <div className="absolute inset-0 top-24 bottom-20 left-4 right-4 z-10">
+        <WindowManager
+          windows={windows}
+          onClose={closeWindow}
+          onUpdate={updateWindow}
+          onFocus={bringToFront}
         />
       </div>
 
@@ -226,6 +322,12 @@ export const MultiSpace = () => {
         <AppDock onOpenApp={openWindow} />
       </div>
 
+      {/* Footer Links */}
+      <div className="absolute bottom-2 left-4 z-50 flex gap-4 text-xs text-muted-foreground">
+        <a href="/contact" className="hover:text-foreground">Contact</a>
+        <a href="/terms" className="hover:text-foreground">Terms & Conditions</a>
+        <a href="/data" className="hover:text-foreground">My Data</a>
+      </div>
     </WorkspaceLayout>
   );
 };

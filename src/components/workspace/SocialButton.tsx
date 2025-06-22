@@ -1,7 +1,8 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Users, Share, LogOut, UserX, Upload } from 'lucide-react';
+import { Users, Share, LogOut, UserX, Upload, LogIn } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
@@ -69,13 +70,22 @@ export const SocialButton = () => {
           size="sm"
           className="bg-glass backdrop-blur-md border border-glass-border hover:bg-glass/80"
         >
-          <Users className="h-4 w-4 mr-2" />
-          Profile
+          {user ? (
+            <>
+              <Users className="h-4 w-4 mr-2" />
+              Profile
+            </>
+          ) : (
+            <>
+              <LogIn className="h-4 w-4 mr-2" />
+              Login
+            </>
+          )}
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Profile</DialogTitle>
+          <DialogTitle>{user ? 'Profile' : 'Login'}</DialogTitle>
         </DialogHeader>
         
         {!user ? (

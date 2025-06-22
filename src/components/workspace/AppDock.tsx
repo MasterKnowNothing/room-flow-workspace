@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Plus, X, Edit3 } from 'lucide-react';
@@ -31,6 +32,7 @@ export const AppDock = ({ onOpenApp }: AppDockProps) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [apps, setApps] = useState<App[]>(defaultApps);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [editingApp, setEditingApp] = useState<number | null>(null);
 
   const handleAddCustomApp = () => {
     if (customAppName && customAppUrl) {
@@ -79,6 +81,26 @@ export const AppDock = ({ onOpenApp }: AppDockProps) => {
     setDraggedIndex(null);
   };
 
+  const handleAppClick = (app: App, index: number) => {
+    if (app.url === 'file-opener') {
+      onOpenApp(app);
+    } else {
+      onOpenApp(app);
+    }
+  };
+
+  const handleRightClick = (e: React.MouseEvent, index: number) => {
+    e.preventDefault();
+    setEditingApp(index);
+  };
+
+  const updateApp = (index: number, newUrl: string) => {
+    setApps(prev => prev.map((app, i) => 
+      i === index ? { ...app, url: newUrl } : app
+    ));
+    setEditingApp(null);
+  };
+
   return (
     <div className="relative">
       <div className="flex items-center gap-2 bg-glass backdrop-blur-md border border-glass-border rounded-full px-4 py-2 shadow-lg">
@@ -96,73 +118,95 @@ export const AppDock = ({ onOpenApp }: AppDockProps) => {
               variant="ghost"
               size="icon"
               className="h-12 w-12 rounded-full hover:bg-glass/80 hover:scale-110 transition-all duration-200 text-lg cursor-pointer"
-              onClick={() => onOpenApp(app)}
+              onClick={() => handleAppClick(app, index)}
+              onContextMenu={(e) => handleRightClick(e, index)}
               title={app.name}
             >
               {app.icon}
             </Button>
+            
+            {editingApp === index && (
+              <div className="absolute top-14 left-0 bg-popover border border-border rounded-md p-2 shadow-md z-50 min-w-48">
+                <Input
+                  placeholder="Enter new URL"
+                  defaultValue={app.url}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      updateApp(index, e.currentTarget.value);
+                    } else if (e.key === 'Escape') {
+                      setEditingApp(null);
+                    }
+                  }}
+                  onBlur={(e) => updateApp(index, e.target.value)}
+                  autoFocus
+                />
+              </div>
+            )}
           </div>
         ))}
 
-      {/* Separator */}
-      <div className="w-px h-8 bg-glass-border mx-2" />
+        {/* Separator */}
+        <div className="w-px h-8 bg-glass-border mx-2" />
 
-      {/* Add Custom App */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogTrigger asChild>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-12 w-12 rounded-full hover:bg-glass/80 hover:scale-110 transition-all duration-200"
-            title="Add Custom App"
-          >
-            <Plus className="h-5 w-5" />
-          </Button>
-        </DialogTrigger>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Add Custom App</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <label className="text-sm font-medium text-foreground mb-2 block">
-                App Name
-              </label>
-              <Input
-                placeholder="e.g., YouTube, Twitter..."
-                value={customAppName}
-                onChange={(e) => setCustomAppName(e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium text-foreground mb-2 block">
-                URL
-              </label>
-              <Input
-                placeholder="e.g., youtube.com, twitter.com..."
-                value={customAppUrl}
-                onChange={(e) => setCustomAppUrl(e.target.value)}
-              />
-            </div>
-            <div className="flex gap-2">
-              <Button 
-                variant="outline" 
-                className="flex-1"
-                onClick={() => setIsDialogOpen(false)}
+        {/* Add Custom App */}
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogTrigger asChild>
+            <div className="flex flex-col items-center">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-12 w-12 rounded-full hover:bg-glass/80 hover:scale-110 transition-all duration-200"
+                title="Add Custom App"
               >
-                Cancel
+                <Plus className="h-5 w-5" />
               </Button>
-              <Button 
-                className="flex-1"
-                onClick={handleAddCustomApp}
-                disabled={!customAppName || !customAppUrl}
-              >
-                Add App
-              </Button>
+              <span className="text-xs text-muted-foreground mt-1">Access any app</span>
             </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Add Custom App</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium text-foreground mb-2 block">
+                  App Name
+                </label>
+                <Input
+                  placeholder="e.g., YouTube, Twitter..."
+                  value={customAppName}
+                  onChange={(e) => setCustomAppName(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-foreground mb-2 block">
+                  URL
+                </label>
+                <Input
+                  placeholder="e.g., youtube.com, twitter.com..."
+                  value={customAppUrl}
+                  onChange={(e) => setCustomAppUrl(e.target.value)}
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  className="flex-1"
+                  onClick={() => setIsDialogOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  className="flex-1"
+                  onClick={handleAddCustomApp}
+                  disabled={!customAppName || !customAppUrl}
+                >
+                  Add App
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

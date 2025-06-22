@@ -1,49 +1,25 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Card } from '@/components/ui/card';
-import { Plus, X, Target, StickyNote, Trash2 } from 'lucide-react';
+import { Plus, X, StickyNote, Target, ChevronDown, ChevronUp } from 'lucide-react';
 import { Project } from './MultiSpace';
 
 interface SecondBrainWallProps {
-  project?: Project;
+  project: Project;
   onUpdateProject: (updates: Partial<Project>) => void;
 }
-
-interface Note {
-  id: string;
-  content: string;
-  type: 'note' | 'goal';
-  color: string;
-}
-
-const noteColors = ['#fef3c7', '#dbeafe', '#d1fae5', '#fce7f3', '#e0e7ff', '#fed7d7'];
 
 export const SecondBrainWall = ({ project, onUpdateProject }: SecondBrainWallProps) => {
   const [newNote, setNewNote] = useState('');
   const [newGoal, setNewGoal] = useState('');
-  const [title, setTitle] = useState(project?.name || 'My Goals');
-  const [isEditingTitle, setIsEditingTitle] = useState(false);
-  const [position, setPosition] = useState({ x: 0, y: 0 });
-  const [size, setSize] = useState({ width: 320, height: 'auto' });
-  const [showNoteInput, setShowNoteInput] = useState(false);
-  const [showGoalInput, setShowGoalInput] = useState(false);
-
-  const notes: Note[] = [
-    ...(project?.notes || []).map((note, index) => ({
-      id: `note-${index}`,
-      content: note,
-      type: 'note' as const,
-      color: noteColors[index % noteColors.length]
-    })),
-    ...(project?.goals || []).map((goal, index) => ({
-      id: `goal-${index}`,
-      content: goal,
-      type: 'goal' as const,
-      color: noteColors[(index + 3) % noteColors.length]
-    }))
-  ];
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [editingNote, setEditingNote] = useState<number | null>(null);
+  const [editingGoal, setEditingGoal] = useState<number | null>(null);
+  const [wallSize, setWallSize] = useState({ width: 350, height: 400 });
+  const [isResizing, setIsResizing] = useState(false);
 
   const addNote = () => {
     if (newNote.trim()) {
@@ -51,7 +27,6 @@ export const SecondBrainWall = ({ project, onUpdateProject }: SecondBrainWallPro
         notes: [...(project?.notes || []), newNote.trim()]
       });
       setNewNote('');
-      setShowNoteInput(false);
     }
   };
 
@@ -61,158 +36,232 @@ export const SecondBrainWall = ({ project, onUpdateProject }: SecondBrainWallPro
         goals: [...(project?.goals || []), newGoal.trim()]
       });
       setNewGoal('');
-      setShowGoalInput(false);
     }
   };
 
-  const removeNote = (noteId: string) => {
-    if (noteId.startsWith('note-')) {
-      const index = parseInt(noteId.split('-')[1]);
-      const newNotes = [...(project?.notes || [])];
-      newNotes.splice(index, 1);
-      onUpdateProject({ notes: newNotes });
-    } else if (noteId.startsWith('goal-')) {
-      const index = parseInt(noteId.split('-')[1]);
-      const newGoals = [...(project?.goals || [])];
-      newGoals.splice(index, 1);
-      onUpdateProject({ goals: newGoals });
-    }
+  const updateNote = (index: number, newValue: string) => {
+    const updatedNotes = [...(project?.notes || [])];
+    updatedNotes[index] = newValue;
+    onUpdateProject({ notes: updatedNotes });
+    setEditingNote(null);
   };
+
+  const updateGoal = (index: number, newValue: string) => {
+    const updatedGoals = [...(project?.goals || [])];
+    updatedGoals[index] = newValue;
+    onUpdateProject({ goals: updatedGoals });
+    setEditingGoal(null);
+  };
+
+  const removeNote = (index: number) => {
+    const updatedNotes = project?.notes?.filter((_, i) => i !== index) || [];
+    onUpdateProject({ notes: updatedNotes });
+  };
+
+  const removeGoal = (index: number) => {
+    const updatedGoals = project?.goals?.filter((_, i) => i !== index) || [];
+    onUpdateProject({ goals: updatedGoals });
+  };
+
+  const handleMouseDown = (e: React.MouseEvent, direction: string) => {
+    e.preventDefault();
+    setIsResizing(true);
+    
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const startWidth = wallSize.width;
+    const startHeight = wallSize.height;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const deltaX = e.clientX - startX;
+      const deltaY = e.clientY - startY;
+      
+      let newWidth = startWidth;
+      let newHeight = startHeight;
+      
+      if (direction.includes('right')) newWidth = Math.max(250, startWidth + deltaX);
+      if (direction.includes('left')) newWidth = Math.max(250, startWidth - deltaX);
+      if (direction.includes('bottom')) newHeight = Math.max(200, startHeight + deltaY);
+      if (direction.includes('top')) newHeight = Math.max(200, startHeight - deltaY);
+      
+      setWallSize({ width: newWidth, height: newHeight });
+    };
+
+    const handleMouseUp = () => {
+      setIsResizing(false);
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  };
+
+  if (!isExpanded) {
+    return (
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => setIsExpanded(true)}
+        className="bg-glass backdrop-blur-md border border-glass-border hover:bg-glass/80"
+      >
+        <StickyNote className="h-4 w-4 mr-2" />
+        My Notes
+      </Button>
+    );
+  }
 
   return (
-    <Card className="h-full bg-glass backdrop-blur-md border border-glass-border shadow-lg p-4 overflow-hidden">
-      <div className="h-full flex flex-col">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-4 pb-2 border-b border-glass-border">
-          <h3 className="font-semibold text-workspace-foreground">My Notes</h3>
-          <div className="flex gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 hover:bg-glass/80"
-              onClick={() => setShowNoteInput(true)}
-              title="Add Note"
-            >
-              <StickyNote className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 hover:bg-glass/80"
-              onClick={() => setShowGoalInput(true)}
-              title="Add Goal"
-            >
-              <Target className="h-4 w-4" />
-            </Button>
-          </div>
+    <div 
+      className="relative bg-glass backdrop-blur-md border border-glass-border rounded-lg shadow-lg"
+      style={{ width: wallSize.width, height: wallSize.height }}
+    >
+      {/* Resize Handles */}
+      <div
+        className="absolute top-0 right-0 w-2 h-full cursor-e-resize hover:bg-primary/20"
+        onMouseDown={(e) => handleMouseDown(e, 'right')}
+      />
+      <div
+        className="absolute bottom-0 left-0 w-full h-2 cursor-s-resize hover:bg-primary/20"
+        onMouseDown={(e) => handleMouseDown(e, 'bottom')}
+      />
+      <div
+        className="absolute bottom-0 right-0 w-3 h-3 cursor-se-resize hover:bg-primary/20"
+        onMouseDown={(e) => handleMouseDown(e, 'bottom-right')}
+      />
+
+      <div className="p-4 h-full overflow-y-auto">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold text-workspace-foreground flex items-center gap-2">
+            <StickyNote className="h-5 w-5" />
+            My Notes
+          </h3>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setIsExpanded(false)}
+            className="h-6 w-6"
+          >
+            <ChevronUp className="h-4 w-4" />
+          </Button>
         </div>
 
-        {/* Note Input */}
-        {showNoteInput && (
-          <div className="mb-4 space-y-2">
-            <Textarea
-              placeholder="Write a note..."
-              value={newNote}
-              onChange={(e) => setNewNote(e.target.value)}
-              className="min-h-[80px] bg-background/50"
-            />
-            <div className="flex gap-2">
-              <Button size="sm" onClick={addNote} disabled={!newNote.trim()}>
-                Add Note
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  setShowNoteInput(false);
-                  setNewNote('');
-                }}
-              >
-                Cancel
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {/* Goal Input */}
-        {showGoalInput && (
-          <div className="mb-4 space-y-2">
-            <Input
-              placeholder="What's your goal?"
-              value={newGoal}
-              onChange={(e) => setNewGoal(e.target.value)}
-              className="bg-background/50"
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') addGoal();
-              }}
-            />
-            <div className="flex gap-2">
-              <Button size="sm" onClick={addGoal} disabled={!newGoal.trim()}>
-                Add Goal
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  setShowGoalInput(false);
-                  setNewGoal('');
-                }}
-              >
-                Cancel
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {/* Notes Wall */}
-        <div className="flex-1 overflow-y-auto space-y-3">
-          {notes.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full text-center py-8">
-              <div className="text-workspace-foreground/40 mb-4">
-                <StickyNote className="h-12 w-12 mx-auto mb-2" />
-                <p className="text-sm">Your notes are empty</p>
-                <p className="text-xs text-workspace-foreground/30 mt-1">
-                  Add notes and goals to get started
-                </p>
-              </div>
-            </div>
-          ) : (
-            notes.map((note) => (
-              <div
-                key={note.id}
-                className="group relative p-3 rounded-lg border border-glass-border shadow-sm hover:shadow-md transition-all duration-200"
-                style={{ backgroundColor: note.color }}
-              >
-                <div className="flex items-start gap-2">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-1 mb-1">
-                      {note.type === 'goal' ? (
-                        <Target className="h-3 w-3 text-workspace-foreground/60" />
-                      ) : (
-                        <StickyNote className="h-3 w-3 text-workspace-foreground/60" />
-                      )}
-                      <span className="text-xs text-workspace-foreground/60 font-medium">
-                        {note.type === 'goal' ? 'Goal' : 'Note'}
-                      </span>
+        <div className="space-y-4">
+          {/* Notes Section */}
+          <div>
+            <h4 className="font-medium text-workspace-foreground mb-2 flex items-center gap-2">
+              <StickyNote className="h-4 w-4" />
+              Notes
+            </h4>
+            <div className="space-y-2">
+              {project?.notes?.map((note, index) => (
+                <div key={index} className="group relative">
+                  {editingNote === index ? (
+                    <Textarea
+                      defaultValue={note}
+                      className="text-sm"
+                      onBlur={(e) => updateNote(index, e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && e.ctrlKey) {
+                          updateNote(index, e.currentTarget.value);
+                        }
+                      }}
+                      autoFocus
+                    />
+                  ) : (
+                    <div 
+                      className="p-2 bg-card rounded border cursor-pointer hover:bg-accent/50"
+                      onClick={() => setEditingNote(index)}
+                    >
+                      <p className="text-sm text-card-foreground">{note}</p>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeNote(index);
+                        }}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
                     </div>
-                    <p className="text-sm text-workspace-foreground whitespace-pre-wrap">
-                      {note.content}
-                    </p>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive/20"
-                    onClick={() => removeNote(note.id)}
-                  >
-                    <Trash2 className="h-3 w-3" />
-                  </Button>
+                  )}
                 </div>
+              ))}
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Add a note..."
+                  value={newNote}
+                  onChange={(e) => setNewNote(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && addNote()}
+                  className="text-sm"
+                />
+                <Button onClick={addNote} size="sm">
+                  <Plus className="h-4 w-4" />
+                </Button>
               </div>
-            ))
-          )}
+            </div>
+          </div>
+
+          {/* Goals Section */}
+          <div>
+            <h4 className="font-medium text-workspace-foreground mb-2 flex items-center gap-2">
+              <Target className="h-4 w-4" />
+              Goals
+            </h4>
+            <div className="space-y-2">
+              {project?.goals?.map((goal, index) => (
+                <div key={index} className="group relative">
+                  {editingGoal === index ? (
+                    <Textarea
+                      defaultValue={goal}
+                      className="text-sm"
+                      onBlur={(e) => updateGoal(index, e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && e.ctrlKey) {
+                          updateGoal(index, e.currentTarget.value);
+                        }
+                      }}
+                      autoFocus
+                    />
+                  ) : (
+                    <div 
+                      className="p-2 bg-card rounded border cursor-pointer hover:bg-accent/50"
+                      onClick={() => setEditingGoal(index)}
+                    >
+                      <p className="text-sm text-card-foreground">{goal}</p>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeGoal(index);
+                        }}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              ))}
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Add a goal..."
+                  value={newGoal}
+                  onChange={(e) => setNewGoal(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && addGoal()}
+                  className="text-sm"
+                />
+                <Button onClick={addGoal} size="sm">
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-    </Card>
+    </div>
   );
 };
