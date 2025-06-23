@@ -1,8 +1,7 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Maximize2, Search, Globe, RefreshCw } from 'lucide-react';
+import { Maximize2, Search, RefreshCw } from 'lucide-react';
 import { Screen } from './ScreenLayout';
 
 interface SideScreenProps {
@@ -14,23 +13,20 @@ interface SideScreenProps {
 }
 
 export const SideScreen = ({ screen, isFullscreen = false, onExpand, onMinimize, onUrlChange }: SideScreenProps) => {
-  const [url, setUrl] = useState('');
   const [currentUrl, setCurrentUrl] = useState('');
-  const [isEditing, setIsEditing] = useState(false);
 
-  const handleUrlSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (url.trim()) {
-      const normalizedUrl = url.startsWith('http') ? url : `https://${url}`;
-      setCurrentUrl(normalizedUrl);
-      onUrlChange?.(screen.id, normalizedUrl);
-      setIsEditing(false);
+  // Update URL when screen.url changes
+  useEffect(() => {
+    if (screen.url && screen.url !== currentUrl) {
+      console.log(`SideScreen ${screen.id} updating URL to: ${screen.url}`);
+      setCurrentUrl(screen.url);
     }
-  };
+  }, [screen.url]);
 
   const handleReplace = () => {
-    setIsEditing(true);
-    setUrl(currentUrl);
+    // Clear current URL to allow new app selection
+    setCurrentUrl('');
+    onUrlChange?.(screen.id, '');
   };
 
   return (
@@ -44,7 +40,7 @@ export const SideScreen = ({ screen, isFullscreen = false, onExpand, onMinimize,
             size="icon"
             onClick={handleReplace}
             className="h-6 w-6"
-            title="Replace URL"
+            title="Replace content"
           >
             <RefreshCw className="h-3 w-3" />
           </Button>
@@ -58,32 +54,6 @@ export const SideScreen = ({ screen, isFullscreen = false, onExpand, onMinimize,
           </Button>
         </div>
       </div>
-
-      {/* URL Bar */}
-      {(isEditing || !currentUrl) && (
-        <div className="p-2 border-b">
-          <form onSubmit={handleUrlSubmit} className="flex gap-2">
-            <div className="flex-1 relative">
-              <Globe className="absolute left-2 top-1/2 transform -translate-y-1/2 h-3 w-3 text-muted-foreground" />
-              <Input
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
-                placeholder="Enter URL..."
-                className="pl-8 h-7 text-xs"
-                autoFocus={isEditing}
-                onBlur={() => {
-                  if (!url.trim()) {
-                    setIsEditing(false);
-                  }
-                }}
-              />
-            </div>
-            <Button type="submit" size="sm" className="h-7 px-2 text-xs">
-              Go
-            </Button>
-          </form>
-        </div>
-      )}
 
       {/* Content */}
       <div className="flex-1 relative">
@@ -99,9 +69,9 @@ export const SideScreen = ({ screen, isFullscreen = false, onExpand, onMinimize,
             <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center mb-3">
               <Search className="h-6 w-6 text-muted-foreground" />
             </div>
-            <p className="text-sm text-muted-foreground mb-2">Enter a URL above</p>
+            <p className="text-sm text-muted-foreground mb-2">Select an app from the dock</p>
             <p className="text-xs text-muted-foreground">
-              Browse any website or web app
+              Click any app and choose this screen
             </p>
           </div>
         )}

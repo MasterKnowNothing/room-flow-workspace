@@ -92,27 +92,32 @@ export const AppDock = ({ onOpenApp }: AppDockProps) => {
   };
 
   const handleAppClick = (app: App) => {
-    console.log(`App clicked: ${app.name}`);
+    console.log(`AppDock: App clicked: ${app.name}`);
     setScreenSelectionApp(app);
   };
 
   const handleScreenSelection = () => {
     if (screenSelectionApp && selectedScreen) {
-      console.log(`Opening ${screenSelectionApp.name} on screen ${selectedScreen}`);
+      console.log(`AppDock: Opening ${screenSelectionApp.name} on screen ${selectedScreen}`);
       
       // Use the global function to actually open the app on the screen
       if ((window as any).openAppOnScreen) {
-        console.log('Calling openAppOnScreen function');
+        console.log('AppDock: Calling openAppOnScreen function');
         (window as any).openAppOnScreen(screenSelectionApp, selectedScreen);
       } else {
-        console.error('openAppOnScreen function not found');
+        console.error('AppDock: openAppOnScreen function not found on window');
       }
       
       onOpenApp(screenSelectionApp, selectedScreen);
       setScreenSelectionApp(null);
       setSelectedScreen('');
     } else {
-      console.error('Missing app or screen selection', { screenSelectionApp, selectedScreen });
+      console.error('AppDock: Missing app or screen selection', { 
+        hasApp: !!screenSelectionApp, 
+        hasScreen: !!selectedScreen,
+        app: screenSelectionApp?.name,
+        screen: selectedScreen
+      });
     }
   };
 
@@ -130,7 +135,7 @@ export const AppDock = ({ onOpenApp }: AppDockProps) => {
 
   return (
     <div className="relative">
-      <div className="flex items-center gap-2 bg-glass backdrop-blur-md border border-glass-border rounded-full px-3 py-2 shadow-lg">
+      <div className="flex items-center gap-2 bg-glass backdrop-blur-md border border-glass-border rounded-full px-3 py-1 shadow-lg">
         {/* Apps */}
         {apps.map((app, index) => (
           <div 

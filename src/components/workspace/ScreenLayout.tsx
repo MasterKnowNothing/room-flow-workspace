@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Maximize2, Minimize2 } from 'lucide-react';
 import { VirtualDesktop } from './VirtualDesktop';
@@ -39,7 +39,7 @@ export const ScreenLayout = ({ onAppOpen }: ScreenLayoutProps) => {
   };
 
   const handleUrlChange = (screenId: string, url: string) => {
-    console.log(`Setting URL for screen ${screenId}: ${url}`);
+    console.log(`ScreenLayout: Setting URL for screen ${screenId}: ${url}`);
     setScreens(prev => prev.map(screen => 
       screen.id === screenId ? { ...screen, url } : screen
     ));
@@ -47,28 +47,26 @@ export const ScreenLayout = ({ onAppOpen }: ScreenLayoutProps) => {
 
   // Handle app opening on specific screen
   const handleAppOpenOnScreen = (app: { name: string; url: string; icon: string }, screenId: string) => {
-    console.log(`Opening ${app.name} on screen ${screenId} with URL: ${app.url}`);
+    console.log(`ScreenLayout: Opening ${app.name} on screen ${screenId} with URL: ${app.url}`);
     
-    // Find the screen and update its URL
-    const targetScreen = screens.find(s => s.id === screenId);
-    if (targetScreen) {
-      console.log(`Found target screen: ${targetScreen.title}`);
-      handleUrlChange(screenId, app.url);
-      onAppOpen?.(app, screenId);
-    } else {
-      console.error(`Screen ${screenId} not found`);
-    }
+    // Update the specific screen with the app URL
+    setScreens(prev => prev.map(screen => 
+      screen.id === screenId ? { ...screen, url: app.url } : screen
+    ));
+    
+    onAppOpen?.(app, screenId);
   };
 
   // Register this function globally so AppDock can use it
-  React.useEffect(() => {
-    console.log('Registering openAppOnScreen function');
+  useEffect(() => {
+    console.log('ScreenLayout: Registering openAppOnScreen function');
     (window as any).openAppOnScreen = handleAppOpenOnScreen;
     
     return () => {
+      console.log('ScreenLayout: Cleaning up openAppOnScreen function');
       delete (window as any).openAppOnScreen;
     };
-  }, [screens]);
+  }, []);
 
   if (expandedScreen) {
     const screen = screens.find(s => s.id === expandedScreen);
@@ -107,7 +105,7 @@ export const ScreenLayout = ({ onAppOpen }: ScreenLayoutProps) => {
         {screens
           .filter(s => s.position?.startsWith('left'))
           .map(screen => (
-            <div key={screen.id} className="flex-1">
+            <div key={screen.id} className="flex-1 min-h-0">
               <SideScreen 
                 screen={screen}
                 onExpand={() => handleExpand(screen.id)}
@@ -140,7 +138,7 @@ export const ScreenLayout = ({ onAppOpen }: ScreenLayoutProps) => {
         {screens
           .filter(s => s.position?.startsWith('right'))
           .map(screen => (
-            <div key={screen.id} className="flex-1">
+            <div key={screen.id} className="flex-1 min-h-0">
               <SideScreen 
                 screen={screen}
                 onExpand={() => handleExpand(screen.id)}

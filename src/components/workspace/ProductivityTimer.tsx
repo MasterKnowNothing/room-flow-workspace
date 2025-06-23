@@ -68,7 +68,7 @@ export const ProductivityTimer = ({ isActive, onToggle, onSessionComplete }: Pro
 
   return (
     <div className="flex items-center gap-2">
-      <ProductivityAnalytics totalProductivityTime={sessions * 25 * 60} />
+      <ProductivityAnalytics totalProductivityTime={sessions * 25} />
       
       <Card className="bg-glass backdrop-blur-md border border-glass-border shadow-2xl p-4 min-w-[200px]">
         <div className="text-center space-y-2">

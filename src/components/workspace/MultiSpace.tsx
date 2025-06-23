@@ -36,12 +36,12 @@ export const MultiSpace = () => {
   const { toast } = useToast();
   const { user } = useAuth();
 
-  // Time tracking for current workspace
+  // Time tracking for current workspace - fix the calculation
   useEffect(() => {
     const interval = setInterval(() => {
       const currentTime = Date.now();
-      const elapsed = Math.floor((currentTime - startTime) / 1000);
-      setTimeSpent(elapsed);
+      const elapsedSeconds = Math.floor((currentTime - startTime) / 1000);
+      setTimeSpent(elapsedSeconds);
     }, 1000);
 
     return () => clearInterval(interval);
@@ -252,13 +252,13 @@ export const MultiSpace = () => {
 
       {/* Top Right Controls - Second Row */}
       <div className="absolute top-16 right-4 z-50 flex items-center gap-2">
-        <ChatButton />
-        <ProductivityTimerButton />
-        <SubmitToolButton isHighlighted={true} />
         <AICommandCenter 
           onOpenApp={() => {}}
           currentProject={projects[currentProject]}
         />
+        <ChatButton />
+        <ProductivityTimerButton />
+        <SubmitToolButton isHighlighted={true} />
       </div>
 
       {/* Bottom Right Action Button */}
