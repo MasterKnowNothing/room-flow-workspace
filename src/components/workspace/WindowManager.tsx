@@ -1,7 +1,6 @@
-
 import React from 'react';
 import { DraggableWindow } from './DraggableWindow';
-import { WorkspaceWindow } from './MultiSpace';
+import { WorkspaceWindow } from './WindowTypes';
 
 interface WindowManagerProps {
   windows: WorkspaceWindow[];

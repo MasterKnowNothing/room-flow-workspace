@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -55,7 +56,7 @@ export const AICommandCenter = ({ onOpenApp, currentProject }: AICommandCenterPr
       if (commandText.includes('summarize')) {
         toast({
           title: "Project Summary 📊",
-          description: `Your workspace has ${currentProject?.windows?.length || 0} active tools and ${(currentProject?.notes?.length || 0) + (currentProject?.goals?.length || 0)} notes/goals.`,
+          description: `Your workspace has active screens and ${(currentProject?.notes?.length || 0) + (currentProject?.goals?.length || 0)} notes/goals.`,
         });
       } else if (commandText.includes('tasks')) {
         toast({
@@ -183,7 +184,7 @@ export const AICommandCenter = ({ onOpenApp, currentProject }: AICommandCenterPr
           {/* Context Info */}
           <div className="text-xs text-muted-foreground border-t pt-3">
             Current context: {currentProject?.name || 'Default Workspace'} • 
-            {currentProject?.windows?.length || 0} active tools • 
+            4 active screens • 
             {(currentProject?.notes?.length || 0) + (currentProject?.goals?.length || 0)} notes/goals
           </div>
         </div>

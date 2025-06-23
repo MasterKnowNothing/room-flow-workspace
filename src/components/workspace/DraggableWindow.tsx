@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { X, Minimize2, Maximize2, ArrowLeft, ArrowRight, RotateCcw, Home, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { WorkspaceWindow } from './MultiSpace';
+import { WorkspaceWindow } from './WindowTypes';
 
 interface DraggableWindowProps {
   window: WorkspaceWindow;
