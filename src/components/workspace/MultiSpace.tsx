@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { WorkspaceLayout } from './WorkspaceLayout';
 import { ScreenLayout } from './ScreenLayout';
@@ -19,24 +20,9 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 
-export interface WorkspaceWindow {
-  id: string;
-  title: string;
-  url: string;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  zIndex: number;
-  isMinimized?: boolean;
-  isFullscreen?: boolean;
-  savedPosition?: { x: number; y: number; width: number; height: number };
-}
-
 export interface Project {
   id: string;
   name: string;
-  windows: WorkspaceWindow[];
   notes: string[];
   goals: string[];
   totalProductivityTime: number;
@@ -99,7 +85,6 @@ export const MultiSpace = () => {
           userProjects[workspace.id] = {
             id: workspace.id,
             name: workspace.name,
-            windows: Array.isArray(workspace.windows) ? (workspace.windows as unknown as WorkspaceWindow[]) : [],
             notes: Array.isArray(workspace.notes) ? (workspace.notes as unknown as string[]) : [],
             goals: Array.isArray(workspace.goals) ? (workspace.goals as unknown as string[]) : [],
             totalProductivityTime: workspace.total_productivity_time || 0
@@ -109,7 +94,6 @@ export const MultiSpace = () => {
         
         const defaultWorkspace = workspaces.find(w => w.is_default) || workspaces[0];
         setCurrentProject(defaultWorkspace.id);
-        setWindows(Array.isArray(defaultWorkspace.windows) ? (defaultWorkspace.windows as unknown as WorkspaceWindow[]) : []);
         setTimeSpent(defaultWorkspace.total_productivity_time || 0);
         setStartTime(Date.now() - (defaultWorkspace.total_productivity_time || 0) * 1000);
       }
@@ -125,8 +109,7 @@ export const MultiSpace = () => {
     // Update current project with latest time
     const updatedProject = {
       ...projects[currentProject],
-      totalProductivityTime: timeSpent,
-      windows: windows
+      totalProductivityTime: timeSpent
     };
 
     try {
@@ -136,7 +119,6 @@ export const MultiSpace = () => {
           id: currentProject,
           user_id: user.id,
           name: updatedProject.name,
-          windows: JSON.parse(JSON.stringify(windows)), // Ensure JSON serializable
           notes: updatedProject.notes,
           goals: updatedProject.goals,
           total_productivity_time: timeSpent,
@@ -149,14 +131,12 @@ export const MultiSpace = () => {
 
   const loadLocalData = () => {
     const savedProjects = localStorage.getItem('multispace-projects');
-    const savedTime = localStorage.getItem(`multispace-time-${currentProject}`);
     
     if (savedProjects) {
       const parsedProjects = JSON.parse(savedProjects);
       setProjects(parsedProjects);
       
       if (parsedProjects.default) {
-        setWindows(parsedProjects.default.windows || []);
         setTimeSpent(parsedProjects.default.totalProductivityTime || 0);
         setStartTime(Date.now() - (parsedProjects.default.totalProductivityTime || 0) * 1000);
       }
@@ -164,74 +144,26 @@ export const MultiSpace = () => {
       const defaultProject: Project = {
         id: 'default',
         name: 'Workspace 1',
-        windows: [],
         notes: [],
         goals: [],
         totalProductivityTime: 0
       };
       setProjects({ default: defaultProject });
     }
-
-    if (savedTime) {
-      setTimeSpent(parseInt(savedTime));
-    }
   };
 
   const saveLocalData = () => {
-    // Update current project with latest time and windows
+    // Update current project with latest time
     const updatedProjects = {
       ...projects,
       [currentProject]: {
         ...projects[currentProject],
-        totalProductivityTime: timeSpent,
-        windows: windows
+        totalProductivityTime: timeSpent
       }
     };
     
     localStorage.setItem('multispace-projects', JSON.stringify(updatedProjects));
     localStorage.setItem(`multispace-time-${currentProject}`, timeSpent.toString());
-  };
-
-  const openWindow = (app: { name: string; url: string; icon: string }) => {
-    const newWindow: WorkspaceWindow = {
-      id: Date.now().toString(),
-      title: app.name,
-      url: app.url,
-      x: Math.random() * 300 + 100,
-      y: Math.random() * 200 + 100,
-      width: 800,
-      height: 600,
-      zIndex: highestZIndex + 1
-    };
-
-    setWindows(prev => [...prev, newWindow]);
-    setHighestZIndex(prev => prev + 1);
-    
-    toast({
-      title: `${app.name} opened`,
-      description: `New window created in your workspace`,
-    });
-  };
-
-  const closeWindow = (windowId: string) => {
-    setWindows(prev => prev.filter(w => w.id !== windowId));
-    
-    toast({
-      title: "Window closed",
-      description: "Window removed from workspace",
-    });
-  };
-
-  const updateWindow = (windowId: string, updates: Partial<WorkspaceWindow>) => {
-    setWindows(prev => prev.map(w => 
-      w.id === windowId ? { ...w, ...updates } : w
-    ));
-  };
-
-  const bringToFront = (windowId: string) => {
-    const newZIndex = highestZIndex + 1;
-    setHighestZIndex(newZIndex);
-    updateWindow(windowId, { zIndex: newZIndex });
   };
 
   const switchProject = (projectId: string) => {
@@ -240,8 +172,7 @@ export const MultiSpace = () => {
       ...prev,
       [currentProject]: {
         ...prev[currentProject],
-        totalProductivityTime: timeSpent,
-        windows: windows
+        totalProductivityTime: timeSpent
       }
     }));
 
@@ -249,7 +180,6 @@ export const MultiSpace = () => {
       const newProject: Project = {
         id: projectId,
         name: `Workspace ${Object.keys(projects).length + 1}`,
-        windows: [],
         notes: [],
         goals: [],
         totalProductivityTime: 0
@@ -258,7 +188,6 @@ export const MultiSpace = () => {
     }
 
     setCurrentProject(projectId);
-    setWindows(projects[projectId]?.windows || []);
     setTimeSpent(projects[projectId]?.totalProductivityTime || 0);
     setStartTime(Date.now() - (projects[projectId]?.totalProductivityTime || 0) * 1000);
     
@@ -285,37 +214,7 @@ export const MultiSpace = () => {
           <ProjectSwitcher 
             projects={projects}
             currentProject={currentProject}
-            onProjectSwitch={(projectId) => {
-              // Save current time to current project
-              setProjects(prev => ({
-                ...prev,
-                [currentProject]: {
-                  ...prev[currentProject],
-                  totalProductivityTime: timeSpent
-                }
-              }));
-
-              if (!projects[projectId]) {
-                const newProject: Project = {
-                  id: projectId,
-                  name: `Workspace ${Object.keys(projects).length + 1}`,
-                  windows: [],
-                  notes: [],
-                  goals: [],
-                  totalProductivityTime: 0
-                };
-                setProjects(prev => ({ ...prev, [projectId]: newProject }));
-              }
-
-              setCurrentProject(projectId);
-              setTimeSpent(projects[projectId]?.totalProductivityTime || 0);
-              setStartTime(Date.now() - (projects[projectId]?.totalProductivityTime || 0) * 1000);
-              
-              toast({
-                title: "Project switched",
-                description: `Now working on ${projects[projectId]?.name || 'New Project'}`,
-              });
-            }}
+            onProjectSwitch={switchProject}
           />
           <SaveOptionsButton />
         </div>
