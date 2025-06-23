@@ -44,24 +44,17 @@ export const ScreenLayout = ({ onAppOpen }: ScreenLayoutProps) => {
     ));
   };
 
-  const addSideScreen = (side: 'left' | 'right') => {
-    const existingScreens = screens.filter(s => s.position?.startsWith(side));
-    const newPosition = `${side}-${existingScreens.length % 2 === 0 ? 'top' : 'bottom'}` as const;
-    const screenNumber = screens.filter(s => s.type === 'side').length + 1;
-    const newScreen: Screen = {
-      id: `${side}-${Date.now()}`,
-      type: 'side',
-      position: newPosition,
-      title: `Screen ${screenNumber}`
-    };
-    setScreens(prev => [...prev, newScreen]);
-  };
-
   // Handle app opening on specific screen
   const handleAppOpenOnScreen = (app: { name: string; url: string; icon: string }, screenId: string) => {
+    console.log(`Opening ${app.name} on screen ${screenId} with URL: ${app.url}`);
     handleUrlChange(screenId, app.url);
     onAppOpen?.(app, screenId);
   };
+
+  // Register this function globally so AppDock can use it
+  React.useEffect(() => {
+    (window as any).openAppOnScreen = handleAppOpenOnScreen;
+  }, []);
 
   if (expandedScreen) {
     const screen = screens.find(s => s.id === expandedScreen);
@@ -109,13 +102,6 @@ export const ScreenLayout = ({ onAppOpen }: ScreenLayoutProps) => {
               />
             </div>
           ))}
-        <Button 
-          variant="outline" 
-          onClick={() => addSideScreen('left')}
-          className="mt-2"
-        >
-          + Add Left Screen
-        </Button>
       </div>
 
       {/* Main Virtual Desktop */}
@@ -149,13 +135,6 @@ export const ScreenLayout = ({ onAppOpen }: ScreenLayoutProps) => {
               />
             </div>
           ))}
-        <Button 
-          variant="outline" 
-          onClick={() => addSideScreen('right')}
-          className="mt-2"
-        >
-          + Add Right Screen
-        </Button>
       </div>
     </div>
   );

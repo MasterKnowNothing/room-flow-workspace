@@ -58,8 +58,6 @@ export const AppDock = ({ onOpenApp }: AppDockProps) => {
       };
       
       setApps(prev => [...prev, newApp]);
-      
-      // Show screen selection for new app
       setScreenSelectionApp(newApp);
       
       setCustomAppName('');
@@ -93,13 +91,16 @@ export const AppDock = ({ onOpenApp }: AppDockProps) => {
     setDraggedIndex(null);
   };
 
-  const handleAppClick = (app: App, index: number) => {
-    // Show screen selection dialog
+  const handleAppClick = (app: App) => {
     setScreenSelectionApp(app);
   };
 
   const handleScreenSelection = () => {
     if (screenSelectionApp && selectedScreen) {
+      // Use the global function to actually open the app on the screen
+      if ((window as any).openAppOnScreen) {
+        (window as any).openAppOnScreen(screenSelectionApp, selectedScreen);
+      }
       onOpenApp(screenSelectionApp, selectedScreen);
       setScreenSelectionApp(null);
       setSelectedScreen('');
@@ -120,7 +121,7 @@ export const AppDock = ({ onOpenApp }: AppDockProps) => {
 
   return (
     <div className="relative">
-      <div className="flex items-center gap-2 bg-glass backdrop-blur-md border border-glass-border rounded-full px-4 py-2 shadow-lg">
+      <div className="flex items-center gap-2 bg-glass backdrop-blur-md border border-glass-border rounded-full px-3 py-1 shadow-lg">
         {/* Apps */}
         {apps.map((app, index) => (
           <div 
@@ -134,8 +135,8 @@ export const AppDock = ({ onOpenApp }: AppDockProps) => {
             <Button
               variant="ghost"
               size="icon"
-              className="h-12 w-12 rounded-full hover:bg-glass/80 hover:scale-110 transition-all duration-200 text-lg cursor-pointer"
-              onClick={() => handleAppClick(app, index)}
+              className="h-10 w-10 rounded-full hover:bg-glass/80 hover:scale-110 transition-all duration-200 text-lg cursor-pointer"
+              onClick={() => handleAppClick(app)}
               onContextMenu={(e) => handleRightClick(e, index)}
               title={app.name}
             >
@@ -143,7 +144,7 @@ export const AppDock = ({ onOpenApp }: AppDockProps) => {
             </Button>
             
             {editingApp === index && (
-              <div className="absolute top-14 left-0 bg-popover border border-border rounded-md p-2 shadow-md z-50 min-w-48">
+              <div className="absolute top-12 left-0 bg-popover border border-border rounded-md p-2 shadow-md z-50 min-w-48">
                 <Input
                   placeholder="Enter new URL"
                   defaultValue={app.url}
@@ -163,22 +164,19 @@ export const AppDock = ({ onOpenApp }: AppDockProps) => {
         ))}
 
         {/* Separator */}
-        <div className="w-px h-8 bg-glass-border mx-2" />
+        <div className="w-px h-6 bg-glass-border mx-1" />
 
         {/* Add Custom App */}
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <div className="flex flex-col items-center">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-12 w-12 rounded-full hover:bg-glass/80 hover:scale-110 transition-all duration-200"
-                title="Add Custom App"
-              >
-                <Plus className="h-5 w-5" />
-              </Button>
-              <span className="text-xs text-muted-foreground mt-1">Access any app</span>
-            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-10 w-10 rounded-full hover:bg-glass/80 hover:scale-110 transition-all duration-200"
+              title="Add Custom App"
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>

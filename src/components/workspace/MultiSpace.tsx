@@ -15,6 +15,7 @@ import { WorkspaceTitle } from './WorkspaceTitle';
 import { TeamModeButton } from './TeamModeButton';
 import { ProductivityTimerButton } from './ProductivityTimerButton';
 import { SaveOptionsButton } from './SaveOptionsButton';
+import { ChatButton } from './ChatButton';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -105,7 +106,6 @@ export const MultiSpace = () => {
   const saveUserData = async () => {
     if (!user || !projects[currentProject]) return;
 
-    // Update current project with latest time
     const updatedProject = {
       ...projects[currentProject],
       totalProductivityTime: timeSpent
@@ -152,7 +152,6 @@ export const MultiSpace = () => {
   };
 
   const saveLocalData = () => {
-    // Update current project with latest time
     const updatedProjects = {
       ...projects,
       [currentProject]: {
@@ -166,7 +165,6 @@ export const MultiSpace = () => {
   };
 
   const switchProject = (projectId: string) => {
-    // Save current time to current project
     setProjects(prev => ({
       ...prev,
       [currentProject]: {
@@ -206,7 +204,6 @@ export const MultiSpace = () => {
   const handleAppOpen = (app: { name: string; url: string; icon: string }, screenId?: string) => {
     if (screenId) {
       console.log(`Opening ${app.name} on screen ${screenId}`);
-      // The ScreenLayout will handle the URL update
     }
     
     toast({
@@ -227,10 +224,8 @@ export const MultiSpace = () => {
             currentProject={currentProject}
             onProjectSwitch={switchProject}
           />
-          <SaveOptionsButton />
         </div>
         
-        {/* My Notes under Workspace */}
         <SecondBrainWall 
           project={projects[currentProject]}
           onUpdateProject={(updates) => {
@@ -252,6 +247,10 @@ export const MultiSpace = () => {
         <SocialButton />
         <ShareWorkspaceButton />
         <ExploreToolsButton />
+        <ChatButton />
+        <ProductivityTimerButton />
+        <SubmitToolButton isHighlighted={true} />
+        <SaveOptionsButton />
         <ThemeSwitcher />
       </div>
 
@@ -263,15 +262,13 @@ export const MultiSpace = () => {
       {/* Bottom Right Action Buttons */}
       <div className="absolute bottom-4 right-4 z-50 flex flex-col gap-3">
         <AICommandCenter 
-          onOpenApp={() => {}} // Not needed for new screen layout
+          onOpenApp={() => {}}
           currentProject={projects[currentProject]}
         />
         <TeamModeButton />
-        <ProductivityTimerButton />
-        <SubmitToolButton />
       </div>
 
-      {/* New Screen Layout replacing old window manager */}
+      {/* New Screen Layout */}
       <div className="absolute inset-0 top-24 bottom-20 z-10">
         <ScreenLayout onAppOpen={handleAppOpen} />
       </div>

@@ -6,7 +6,11 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Wrench } from 'lucide-react';
 
-export const SubmitToolButton = () => {
+interface SubmitToolButtonProps {
+  isHighlighted?: boolean;
+}
+
+export const SubmitToolButton = ({ isHighlighted = false }: SubmitToolButtonProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [toolLink, setToolLink] = useState('');
   const [toolName, setToolName] = useState('');
@@ -19,7 +23,11 @@ export const SubmitToolButton = () => {
         <DialogTrigger asChild>
           <Button
             size="icon"
-            className="h-12 w-12 rounded-full shadow-lg bg-primary hover:bg-primary/90"
+            className={`h-12 w-12 rounded-full shadow-lg ${
+              isHighlighted 
+                ? 'bg-orange-500 hover:bg-orange-600' 
+                : 'bg-primary hover:bg-primary/90'
+            }`}
             title="Submit My Tool"
           >
             <Wrench className="h-5 w-5" />
