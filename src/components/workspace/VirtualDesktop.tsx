@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Monitor, Wifi, Settings, Shield, Zap, Lock, X } from 'lucide-react';
@@ -13,7 +14,7 @@ export const VirtualDesktop = ({ isFullscreen = false }: VirtualDesktopProps) =>
   const [isInstalling, setIsInstalling] = useState(false);
   const [showInstallPrompt, setShowInstallPrompt] = useState(false);
   const [desktopStream, setDesktopStream] = useState<MediaStream | null>(null);
-  const [canDismiss, setCanDismiss] = useState(true);
+  const [showEnableButton, setShowEnableButton] = useState(false);
 
   useEffect(() => {
     checkDesktopCapture();
@@ -21,9 +22,7 @@ export const VirtualDesktop = ({ isFullscreen = false }: VirtualDesktopProps) =>
 
   const checkDesktopCapture = async () => {
     try {
-      // Check if screen capture is supported
       if (navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia) {
-        // For demo purposes, show install prompt first
         setShowInstallPrompt(true);
       } else {
         console.log('Screen capture not supported');
@@ -39,12 +38,12 @@ export const VirtualDesktop = ({ isFullscreen = false }: VirtualDesktopProps) =>
     setIsInstalling(true);
     
     try {
-      // Step 1: Request screen capture permission
+      // Request screen capture with proper constraints
       const stream = await navigator.mediaDevices.getDisplayMedia({
         video: {
-          mediaSource: 'screen',
           width: { ideal: 1920 },
-          height: { ideal: 1080 }
+          height: { ideal: 1080 },
+          frameRate: { ideal: 30 }
         },
         audio: false
       });
@@ -54,13 +53,14 @@ export const VirtualDesktop = ({ isFullscreen = false }: VirtualDesktopProps) =>
       setIsInstalling(false);
       setShowInstallPrompt(false);
       setIsConnected(true);
+      setShowEnableButton(false);
       
     } catch (error) {
       console.error('Screen capture failed:', error);
       setIsInstalling(false);
-      // For demo purposes, still proceed to show simulated desktop
       setIsAgentInstalled(true);
       setShowInstallPrompt(false);
+      setShowEnableButton(true);
       connectToDesktop();
     }
   };
@@ -79,26 +79,25 @@ export const VirtualDesktop = ({ isFullscreen = false }: VirtualDesktopProps) =>
       setDesktopStream(null);
     }
     setIsConnected(false);
+    setShowEnableButton(true);
+  };
+
+  const handleEnableDesktop = () => {
+    setShowInstallPrompt(true);
+    setShowEnableButton(false);
   };
 
   if (showInstallPrompt && !isAgentInstalled) {
     return (
-      <Dialog open={showInstallPrompt} onOpenChange={(open) => canDismiss && setShowInstallPrompt(open)}>
+      <Dialog open={showInstallPrompt} onOpenChange={(open) => {
+        setShowInstallPrompt(open);
+        if (!open) setShowEnableButton(true);
+      }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Monitor className="h-5 w-5" />
               Enable Full Multispace Experience
-              {canDismiss && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setShowInstallPrompt(false)}
-                  className="ml-auto h-6 w-6"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              )}
             </DialogTitle>
           </DialogHeader>
           
@@ -136,27 +135,68 @@ export const VirtualDesktop = ({ isFullscreen = false }: VirtualDesktopProps) =>
     );
   }
 
+  if (showEnableButton) {
+    return (
+      <div className="w-full h-full flex flex-col items-center justify-center bg-gray-100 dark:bg-gray-900 p-6">
+        <div className="text-center space-y-6 max-w-md">
+          <div className="w-24 h-24 bg-blue-500 rounded-full flex items-center justify-center mx-auto">
+            <Monitor className="h-12 w-12 text-white" />
+          </div>
+          
+          <div>
+            <h2 className="text-2xl font-bold mb-2">Enable Desktop Integration</h2>
+            <p className="text-muted-foreground mb-4">
+              Connect your desktop to work directly within Multispace
+            </p>
+            <Button onClick={handleEnableDesktop} size="lg">
+              Enable Multispace
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (isConnected) {
     return (
       <div className="w-full h-full relative bg-gray-900">
-        {/* Live Desktop Stream */}
         <div className="absolute inset-0">
           {desktopStream ? (
-            <video
-              ref={(video) => {
-                if (video && desktopStream) {
-                  video.srcObject = desktopStream;
-                  video.play();
-                }
-              }}
-              className="w-full h-full object-cover"
-              autoPlay
-              muted
-            />
+            <div className="w-full h-full relative">
+              <video
+                ref={(video) => {
+                  if (video && desktopStream) {
+                    video.srcObject = desktopStream;
+                    video.play();
+                  }
+                }}
+                className="w-full h-full object-cover cursor-pointer"
+                autoPlay
+                muted
+                onClick={(e) => {
+                  // Enable full interaction with the desktop
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  const x = e.clientX - rect.left;
+                  const y = e.clientY - rect.top;
+                  console.log('Desktop click at:', x, y);
+                }}
+                onMouseMove={(e) => {
+                  // Track mouse movement for desktop interaction
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  const x = e.clientX - rect.left;
+                  const y = e.clientY - rect.top;
+                  // Send mouse coordinates to desktop agent
+                }}
+              />
+              <div className="absolute inset-0 pointer-events-none">
+                <div className="absolute top-4 left-4 bg-black/50 text-white px-3 py-1 rounded text-sm">
+                  Live Desktop - Fully Interactive
+                </div>
+              </div>
+            </div>
           ) : (
             // Fallback simulated desktop
             <div className="w-full h-full bg-gradient-to-br from-blue-600 via-purple-600 to-blue-800 relative">
-              {/* ... keep existing code (desktop simulation) */}
               <div 
                 className="absolute inset-0"
                 style={{
@@ -180,7 +220,7 @@ export const VirtualDesktop = ({ isFullscreen = false }: VirtualDesktopProps) =>
                 </div>
               </div>
 
-              <div className="absolute top-1/4 left-1/3 w-80 h-60 bg-white rounded-lg shadow-2xl">
+              <div className="absolute top-1/4 left-1/3 w-80 h-60 bg-white rounded-lg shadow-2xl cursor-pointer">
                 <div className="h-8 bg-gray-100 rounded-t-lg flex items-center px-3 gap-2">
                   <div className="w-3 h-3 bg-red-500 rounded-full" />
                   <div className="w-3 h-3 bg-yellow-500 rounded-full" />

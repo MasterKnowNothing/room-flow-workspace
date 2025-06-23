@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { WorkspaceLayout } from './WorkspaceLayout';
 import { ScreenLayout } from './ScreenLayout';
@@ -14,7 +15,6 @@ import { IntroductionTour } from './IntroductionTour';
 import { WorkspaceTitle } from './WorkspaceTitle';
 import { TeamModeButton } from './TeamModeButton';
 import { ProductivityTimerButton } from './ProductivityTimerButton';
-import { SaveOptionsButton } from './SaveOptionsButton';
 import { ChatButton } from './ChatButton';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
@@ -242,29 +242,27 @@ export const MultiSpace = () => {
         <WorkspaceTitle />
       </div>
       
-      {/* Top Right Controls */}
+      {/* Top Right Controls - First Row */}
       <div className="absolute top-4 right-4 z-50 flex items-center gap-2">
         <SocialButton />
         <ShareWorkspaceButton />
         <ExploreToolsButton />
-        <ChatButton />
-        <ProductivityTimerButton />
-        <SubmitToolButton isHighlighted={true} />
-        <SaveOptionsButton />
         <ThemeSwitcher />
       </div>
 
-      {/* Time Display */}
-      <div className="absolute top-4 left-4 z-40 mt-12 bg-white dark:bg-gray-900 px-3 py-1 rounded-md shadow-sm border">
-        <span className="text-sm font-medium">{formatTime(timeSpent)}</span>
-      </div>
-
-      {/* Bottom Right Action Buttons */}
-      <div className="absolute bottom-4 right-4 z-50 flex flex-col gap-3">
+      {/* Top Right Controls - Second Row */}
+      <div className="absolute top-16 right-4 z-50 flex items-center gap-2">
+        <ChatButton />
+        <ProductivityTimerButton />
+        <SubmitToolButton isHighlighted={true} />
         <AICommandCenter 
           onOpenApp={() => {}}
           currentProject={projects[currentProject]}
         />
+      </div>
+
+      {/* Bottom Right Action Button */}
+      <div className="absolute bottom-4 right-4 z-50">
         <TeamModeButton />
       </div>
 

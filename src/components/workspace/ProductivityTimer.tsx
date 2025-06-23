@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -62,12 +63,12 @@ export const ProductivityTimer = ({ isActive, onToggle, onSessionComplete }: Pro
   };
 
   const progress = mode === 'work' 
-    ? (25 * 60 - timeLeft) / (25 * 60) * 100
-    : (5 * 60 - timeLeft) / (5 * 60) * 100;
+    ? ((25 * 60) - timeLeft) / (25 * 60) * 100
+    : ((5 * 60) - timeLeft) / (5 * 60) * 100;
 
   return (
     <div className="flex items-center gap-2">
-      <ProductivityAnalytics totalProductivityTime={sessions * 25} />
+      <ProductivityAnalytics totalProductivityTime={sessions * 25 * 60} />
       
       <Card className="bg-glass backdrop-blur-md border border-glass-border shadow-2xl p-4 min-w-[200px]">
         <div className="text-center space-y-2">

@@ -39,6 +39,7 @@ export const ScreenLayout = ({ onAppOpen }: ScreenLayoutProps) => {
   };
 
   const handleUrlChange = (screenId: string, url: string) => {
+    console.log(`Setting URL for screen ${screenId}: ${url}`);
     setScreens(prev => prev.map(screen => 
       screen.id === screenId ? { ...screen, url } : screen
     ));
@@ -47,14 +48,27 @@ export const ScreenLayout = ({ onAppOpen }: ScreenLayoutProps) => {
   // Handle app opening on specific screen
   const handleAppOpenOnScreen = (app: { name: string; url: string; icon: string }, screenId: string) => {
     console.log(`Opening ${app.name} on screen ${screenId} with URL: ${app.url}`);
-    handleUrlChange(screenId, app.url);
-    onAppOpen?.(app, screenId);
+    
+    // Find the screen and update its URL
+    const targetScreen = screens.find(s => s.id === screenId);
+    if (targetScreen) {
+      console.log(`Found target screen: ${targetScreen.title}`);
+      handleUrlChange(screenId, app.url);
+      onAppOpen?.(app, screenId);
+    } else {
+      console.error(`Screen ${screenId} not found`);
+    }
   };
 
   // Register this function globally so AppDock can use it
   React.useEffect(() => {
+    console.log('Registering openAppOnScreen function');
     (window as any).openAppOnScreen = handleAppOpenOnScreen;
-  }, []);
+    
+    return () => {
+      delete (window as any).openAppOnScreen;
+    };
+  }, [screens]);
 
   if (expandedScreen) {
     const screen = screens.find(s => s.id === expandedScreen);

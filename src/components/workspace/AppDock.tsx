@@ -28,10 +28,10 @@ const defaultApps: App[] = [
 ];
 
 const screenOptions = [
-  { id: 'left-top', label: 'Screen 1 (Left Top)' },
-  { id: 'left-bottom', label: 'Screen 2 (Left Bottom)' },
-  { id: 'right-top', label: 'Screen 3 (Right Top)' },
-  { id: 'right-bottom', label: 'Screen 4 (Right Bottom)' },
+  { id: 'left-top', label: 'Screen 1' },
+  { id: 'left-bottom', label: 'Screen 2' },
+  { id: 'right-top', label: 'Screen 3' },
+  { id: 'right-bottom', label: 'Screen 4' },
 ];
 
 export const AppDock = ({ onOpenApp }: AppDockProps) => {
@@ -92,18 +92,27 @@ export const AppDock = ({ onOpenApp }: AppDockProps) => {
   };
 
   const handleAppClick = (app: App) => {
+    console.log(`App clicked: ${app.name}`);
     setScreenSelectionApp(app);
   };
 
   const handleScreenSelection = () => {
     if (screenSelectionApp && selectedScreen) {
+      console.log(`Opening ${screenSelectionApp.name} on screen ${selectedScreen}`);
+      
       // Use the global function to actually open the app on the screen
       if ((window as any).openAppOnScreen) {
+        console.log('Calling openAppOnScreen function');
         (window as any).openAppOnScreen(screenSelectionApp, selectedScreen);
+      } else {
+        console.error('openAppOnScreen function not found');
       }
+      
       onOpenApp(screenSelectionApp, selectedScreen);
       setScreenSelectionApp(null);
       setSelectedScreen('');
+    } else {
+      console.error('Missing app or screen selection', { screenSelectionApp, selectedScreen });
     }
   };
 
@@ -121,7 +130,7 @@ export const AppDock = ({ onOpenApp }: AppDockProps) => {
 
   return (
     <div className="relative">
-      <div className="flex items-center gap-2 bg-glass backdrop-blur-md border border-glass-border rounded-full px-3 py-1 shadow-lg">
+      <div className="flex items-center gap-2 bg-glass backdrop-blur-md border border-glass-border rounded-full px-3 py-2 shadow-lg">
         {/* Apps */}
         {apps.map((app, index) => (
           <div 
@@ -225,7 +234,10 @@ export const AppDock = ({ onOpenApp }: AppDockProps) => {
       </div>
 
       {/* Screen Selection Dialog */}
-      <Dialog open={!!screenSelectionApp} onOpenChange={() => setScreenSelectionApp(null)}>
+      <Dialog open={!!screenSelectionApp} onOpenChange={() => {
+        setScreenSelectionApp(null);
+        setSelectedScreen('');
+      }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Choose Screen</DialogTitle>
@@ -252,7 +264,10 @@ export const AppDock = ({ onOpenApp }: AppDockProps) => {
               <Button 
                 variant="outline" 
                 className="flex-1"
-                onClick={() => setScreenSelectionApp(null)}
+                onClick={() => {
+                  setScreenSelectionApp(null);
+                  setSelectedScreen('');
+                }}
               >
                 Cancel
               </Button>
