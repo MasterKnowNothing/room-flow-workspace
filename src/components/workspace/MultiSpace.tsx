@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { WorkspaceLayout } from './WorkspaceLayout';
-import { WindowManager } from './WindowManager';
+import { ScreenLayout } from './ScreenLayout';
 import { AppDock } from './AppDock';
 import { ProjectSwitcher } from './ProjectSwitcher';
 import { SecondBrainWall } from './SecondBrainWall';
@@ -45,8 +45,6 @@ export interface Project {
 export const MultiSpace = () => {
   const [currentProject, setCurrentProject] = useState<string>('default');
   const [projects, setProjects] = useState<{ [key: string]: Project }>({});
-  const [windows, setWindows] = useState<WorkspaceWindow[]>([]);
-  const [highestZIndex, setHighestZIndex] = useState(1000);
   const [timeSpent, setTimeSpent] = useState<number>(0);
   const [startTime, setStartTime] = useState<number>(Date.now());
   const { toast } = useToast();
@@ -287,7 +285,37 @@ export const MultiSpace = () => {
           <ProjectSwitcher 
             projects={projects}
             currentProject={currentProject}
-            onProjectSwitch={switchProject}
+            onProjectSwitch={(projectId) => {
+              // Save current time to current project
+              setProjects(prev => ({
+                ...prev,
+                [currentProject]: {
+                  ...prev[currentProject],
+                  totalProductivityTime: timeSpent
+                }
+              }));
+
+              if (!projects[projectId]) {
+                const newProject: Project = {
+                  id: projectId,
+                  name: `Workspace ${Object.keys(projects).length + 1}`,
+                  windows: [],
+                  notes: [],
+                  goals: [],
+                  totalProductivityTime: 0
+                };
+                setProjects(prev => ({ ...prev, [projectId]: newProject }));
+              }
+
+              setCurrentProject(projectId);
+              setTimeSpent(projects[projectId]?.totalProductivityTime || 0);
+              setStartTime(Date.now() - (projects[projectId]?.totalProductivityTime || 0) * 1000);
+              
+              toast({
+                title: "Project switched",
+                description: `Now working on ${projects[projectId]?.name || 'New Project'}`,
+              });
+            }}
           />
           <SaveOptionsButton />
         </div>
@@ -325,7 +353,7 @@ export const MultiSpace = () => {
       {/* Bottom Right Action Buttons */}
       <div className="absolute bottom-4 right-4 z-50 flex flex-col gap-3">
         <AICommandCenter 
-          onOpenApp={openWindow}
+          onOpenApp={() => {}} // Not needed for new screen layout
           currentProject={projects[currentProject]}
         />
         <TeamModeButton />
@@ -333,19 +361,14 @@ export const MultiSpace = () => {
         <SubmitToolButton />
       </div>
 
-      {/* Expanded Window Manager with Canvas */}
-      <div className="absolute inset-0 top-24 bottom-20 left-4 right-4 z-10">
-        <WindowManager
-          windows={windows}
-          onClose={closeWindow}
-          onUpdate={updateWindow}
-          onFocus={bringToFront}
-        />
+      {/* New Screen Layout replacing old window manager */}
+      <div className="absolute inset-0 top-24 bottom-20 z-10">
+        <ScreenLayout />
       </div>
 
       {/* App Dock */}
       <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-50">
-        <AppDock onOpenApp={openWindow} />
+        <AppDock onOpenApp={() => {}} />
       </div>
 
       {/* Footer Links */}
