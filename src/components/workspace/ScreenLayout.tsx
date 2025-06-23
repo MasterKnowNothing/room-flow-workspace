@@ -11,10 +11,15 @@ export interface Screen {
   position?: 'left-top' | 'left-bottom' | 'right-top' | 'right-bottom';
   title: string;
   content?: string;
+  url?: string;
   isExpanded?: boolean;
 }
 
-export const ScreenLayout = () => {
+interface ScreenLayoutProps {
+  onAppOpen?: (app: { name: string; url: string; icon: string }, screenId: string) => void;
+}
+
+export const ScreenLayout = ({ onAppOpen }: ScreenLayoutProps) => {
   const [screens, setScreens] = useState<Screen[]>([
     { id: 'main', type: 'main', title: 'Virtual Desktop' },
     { id: 'left-top', type: 'side', position: 'left-top', title: 'Screen 1' },
@@ -33,16 +38,29 @@ export const ScreenLayout = () => {
     setExpandedScreen(null);
   };
 
+  const handleUrlChange = (screenId: string, url: string) => {
+    setScreens(prev => prev.map(screen => 
+      screen.id === screenId ? { ...screen, url } : screen
+    ));
+  };
+
   const addSideScreen = (side: 'left' | 'right') => {
     const existingScreens = screens.filter(s => s.position?.startsWith(side));
     const newPosition = `${side}-${existingScreens.length % 2 === 0 ? 'top' : 'bottom'}` as const;
+    const screenNumber = screens.filter(s => s.type === 'side').length + 1;
     const newScreen: Screen = {
       id: `${side}-${Date.now()}`,
       type: 'side',
       position: newPosition,
-      title: `Screen ${screens.length}`
+      title: `Screen ${screenNumber}`
     };
     setScreens(prev => [...prev, newScreen]);
+  };
+
+  // Handle app opening on specific screen
+  const handleAppOpenOnScreen = (app: { name: string; url: string; icon: string }, screenId: string) => {
+    handleUrlChange(screenId, app.url);
+    onAppOpen?.(app, screenId);
   };
 
   if (expandedScreen) {
@@ -68,6 +86,7 @@ export const ScreenLayout = () => {
             isFullscreen={true}
             onExpand={() => {}}
             onMinimize={handleMinimize}
+            onUrlChange={handleUrlChange}
           />
         )}
       </div>
@@ -86,6 +105,7 @@ export const ScreenLayout = () => {
                 screen={screen}
                 onExpand={() => handleExpand(screen.id)}
                 onMinimize={() => {}}
+                onUrlChange={handleUrlChange}
               />
             </div>
           ))}
@@ -125,6 +145,7 @@ export const ScreenLayout = () => {
                 screen={screen}
                 onExpand={() => handleExpand(screen.id)}
                 onMinimize={() => {}}
+                onUrlChange={handleUrlChange}
               />
             </div>
           ))}

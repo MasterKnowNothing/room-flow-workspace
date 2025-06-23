@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Maximize2, Search, Globe } from 'lucide-react';
+import { Maximize2, Search, Globe, RefreshCw } from 'lucide-react';
 import { Screen } from './ScreenLayout';
 
 interface SideScreenProps {
@@ -10,16 +10,27 @@ interface SideScreenProps {
   isFullscreen?: boolean;
   onExpand: () => void;
   onMinimize: () => void;
+  onUrlChange?: (screenId: string, url: string) => void;
 }
 
-export const SideScreen = ({ screen, isFullscreen = false, onExpand, onMinimize }: SideScreenProps) => {
+export const SideScreen = ({ screen, isFullscreen = false, onExpand, onMinimize, onUrlChange }: SideScreenProps) => {
   const [url, setUrl] = useState('');
   const [currentUrl, setCurrentUrl] = useState('');
+  const [isEditing, setIsEditing] = useState(false);
 
   const handleUrlSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const normalizedUrl = url.startsWith('http') ? url : `https://${url}`;
-    setCurrentUrl(normalizedUrl);
+    if (url.trim()) {
+      const normalizedUrl = url.startsWith('http') ? url : `https://${url}`;
+      setCurrentUrl(normalizedUrl);
+      onUrlChange?.(screen.id, normalizedUrl);
+      setIsEditing(false);
+    }
+  };
+
+  const handleReplace = () => {
+    setIsEditing(true);
+    setUrl(currentUrl);
   };
 
   return (
@@ -27,30 +38,52 @@ export const SideScreen = ({ screen, isFullscreen = false, onExpand, onMinimize 
       {/* Header */}
       <div className="flex items-center justify-between p-2 bg-muted border-b">
         <h3 className="text-sm font-medium truncate">{screen.title}</h3>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={onExpand}
-          className="h-6 w-6"
-        >
-          <Maximize2 className="h-3 w-3" />
-        </Button>
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleReplace}
+            className="h-6 w-6"
+            title="Replace URL"
+          >
+            <RefreshCw className="h-3 w-3" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onExpand}
+            className="h-6 w-6"
+          >
+            <Maximize2 className="h-3 w-3" />
+          </Button>
+        </div>
       </div>
 
       {/* URL Bar */}
-      <div className="p-2 border-b">
-        <form onSubmit={handleUrlSubmit} className="flex gap-2">
-          <div className="flex-1 relative">
-            <Globe className="absolute left-2 top-1/2 transform -translate-y-1/2 h-3 w-3 text-muted-foreground" />
-            <Input
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              placeholder="Enter URL..."
-              className="pl-8 h-7 text-xs"
-            />
-          </div>
-        </form>
-      </div>
+      {(isEditing || !currentUrl) && (
+        <div className="p-2 border-b">
+          <form onSubmit={handleUrlSubmit} className="flex gap-2">
+            <div className="flex-1 relative">
+              <Globe className="absolute left-2 top-1/2 transform -translate-y-1/2 h-3 w-3 text-muted-foreground" />
+              <Input
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                placeholder="Enter URL..."
+                className="pl-8 h-7 text-xs"
+                autoFocus={isEditing}
+                onBlur={() => {
+                  if (!url.trim()) {
+                    setIsEditing(false);
+                  }
+                }}
+              />
+            </div>
+            <Button type="submit" size="sm" className="h-7 px-2 text-xs">
+              Go
+            </Button>
+          </form>
+        </div>
+      )}
 
       {/* Content */}
       <div className="flex-1 relative">

@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Plus, X, Edit3 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface App {
   name: string;
@@ -12,7 +13,7 @@ interface App {
 }
 
 interface AppDockProps {
-  onOpenApp: (app: App) => void;
+  onOpenApp: (app: App, screenId?: string) => void;
 }
 
 const defaultApps: App[] = [
@@ -26,6 +27,13 @@ const defaultApps: App[] = [
   { name: 'Spotify', url: 'https://open.spotify.com', icon: '🎵' },
 ];
 
+const screenOptions = [
+  { id: 'left-top', label: 'Screen 1 (Left Top)' },
+  { id: 'left-bottom', label: 'Screen 2 (Left Bottom)' },
+  { id: 'right-top', label: 'Screen 3 (Right Top)' },
+  { id: 'right-bottom', label: 'Screen 4 (Right Bottom)' },
+];
+
 export const AppDock = ({ onOpenApp }: AppDockProps) => {
   const [customAppName, setCustomAppName] = useState('');
   const [customAppUrl, setCustomAppUrl] = useState('');
@@ -33,6 +41,8 @@ export const AppDock = ({ onOpenApp }: AppDockProps) => {
   const [apps, setApps] = useState<App[]>(defaultApps);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [editingApp, setEditingApp] = useState<number | null>(null);
+  const [screenSelectionApp, setScreenSelectionApp] = useState<App | null>(null);
+  const [selectedScreen, setSelectedScreen] = useState<string>('');
 
   const handleAddCustomApp = () => {
     if (customAppName && customAppUrl) {
@@ -48,7 +58,9 @@ export const AppDock = ({ onOpenApp }: AppDockProps) => {
       };
       
       setApps(prev => [...prev, newApp]);
-      onOpenApp(newApp);
+      
+      // Show screen selection for new app
+      setScreenSelectionApp(newApp);
       
       setCustomAppName('');
       setCustomAppUrl('');
@@ -82,10 +94,15 @@ export const AppDock = ({ onOpenApp }: AppDockProps) => {
   };
 
   const handleAppClick = (app: App, index: number) => {
-    if (app.url === 'file-opener') {
-      onOpenApp(app);
-    } else {
-      onOpenApp(app);
+    // Show screen selection dialog
+    setScreenSelectionApp(app);
+  };
+
+  const handleScreenSelection = () => {
+    if (screenSelectionApp && selectedScreen) {
+      onOpenApp(screenSelectionApp, selectedScreen);
+      setScreenSelectionApp(null);
+      setSelectedScreen('');
     }
   };
 
@@ -208,6 +225,50 @@ export const AppDock = ({ onOpenApp }: AppDockProps) => {
           </DialogContent>
         </Dialog>
       </div>
+
+      {/* Screen Selection Dialog */}
+      <Dialog open={!!screenSelectionApp} onOpenChange={() => setScreenSelectionApp(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Choose Screen</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Select which screen to open {screenSelectionApp?.name} on:
+            </p>
+            
+            <Select value={selectedScreen} onValueChange={setSelectedScreen}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select a screen" />
+              </SelectTrigger>
+              <SelectContent>
+                {screenOptions.map((screen) => (
+                  <SelectItem key={screen.id} value={screen.id}>
+                    {screen.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                className="flex-1"
+                onClick={() => setScreenSelectionApp(null)}
+              >
+                Cancel
+              </Button>
+              <Button 
+                className="flex-1"
+                onClick={handleScreenSelection}
+                disabled={!selectedScreen}
+              >
+                Open on Screen
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

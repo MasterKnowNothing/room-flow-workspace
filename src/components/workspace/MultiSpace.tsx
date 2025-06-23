@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { WorkspaceLayout } from './WorkspaceLayout';
 import { ScreenLayout } from './ScreenLayout';
@@ -204,6 +203,18 @@ export const MultiSpace = () => {
     return `${hours}h ${minutes}m ${secs}s`;
   };
 
+  const handleAppOpen = (app: { name: string; url: string; icon: string }, screenId?: string) => {
+    if (screenId) {
+      console.log(`Opening ${app.name} on screen ${screenId}`);
+      // The ScreenLayout will handle the URL update
+    }
+    
+    toast({
+      title: "App opened",
+      description: `${app.name} opened on ${screenId ? `screen ${screenId}` : 'selected screen'}`,
+    });
+  };
+
   return (
     <WorkspaceLayout>
       <IntroductionTour />
@@ -262,12 +273,12 @@ export const MultiSpace = () => {
 
       {/* New Screen Layout replacing old window manager */}
       <div className="absolute inset-0 top-24 bottom-20 z-10">
-        <ScreenLayout />
+        <ScreenLayout onAppOpen={handleAppOpen} />
       </div>
 
       {/* App Dock */}
       <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-50">
-        <AppDock onOpenApp={() => {}} />
+        <AppDock onOpenApp={handleAppOpen} />
       </div>
 
       {/* Footer Links */}
